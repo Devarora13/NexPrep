@@ -67,7 +67,7 @@
 ## 📁 Project Structure
 
 ```
-nexprep_v2/
+nexprep/
 ├── app/                          # Next.js App Router
 │   ├── (main)/                   # Main application routes
 │   │   ├── dashboard/            # User dashboard
@@ -105,7 +105,7 @@ nexprep_v2/
 1. **Clone the repository**
    ```bash
    git clone <your-repo-url>
-   cd nexprep_v2
+   cd nexprep
    ```
 
 2. **Install dependencies**
@@ -184,8 +184,8 @@ nexprep_v2/
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/vansh1925/NexPrep_v2
-   cd nexprep_v2
+   git clone https://github.com/Devarora13/NexPrep
+   cd nexprep
    ```
 
 2. **Install dependencies**
@@ -336,9 +336,6 @@ POST /api/ai-feedback
 - **Privacy Compliant**: GDPR and privacy regulation compliant
 - **Session Management**: Secure session handling and token management
 
-## 📞 Support & Contact
-
-- **Support Email**: vworkp625@gmail.com
 
 ## 📄 License
 
