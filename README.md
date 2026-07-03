@@ -219,7 +219,7 @@ nexprep_v2/
    ```
 
 6. **Open your browser**
-   Navigate to [https://nexprep-v2.vercel.app/]
+   Navigate to [h[ttps://nexprep-v2.vercel.app/](https://nex-prep-phi.vercel.app/)]
 
 ## 📖 Usage Guide
 
