@@ -50,6 +50,11 @@ export default function ConfirmationModal({ isOpen, onClose, onConfirm, formData
                     <span className="font-medium text-gray-700">Duration:</span>
                     <span className="text-gray-900">{formData.interviewDuration}</span>
                   </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-gray-700">Interview Type:</span>
+                    <span className="text-gray-900">{formData.interviewType}</span>
+                  </div>
                   
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-gray-700">Difficulty:</span>
