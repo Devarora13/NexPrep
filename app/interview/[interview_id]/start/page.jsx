@@ -42,6 +42,7 @@ function Interview() {
   const [isCallActive, setIsCallActive] = useState(false);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [showEndConfirmation, setShowEndConfirmation] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const [Conversation, setConversation] = useState([]);
 
@@ -545,6 +546,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
   const completeInterview = async (completionReason) => {
     if (isCompletingRef.current || !interviewData) return;
     isCompletingRef.current = true;
+    setIsCompleting(true);
     setIsCallActive(false);
     setIsTimerActive(false);
 
@@ -694,6 +696,18 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
   // Main UI
   return (
     <div className="bg-gradient-to-b from-gray-900 to-gray-800 min-h-screen text-white">
+      {isCompleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/90 p-6">
+          <div className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-800 p-8 text-center shadow-2xl">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+            <h2 className="mt-5 text-2xl font-bold">Interview complete</h2>
+            <p className="mt-2 text-gray-300">
+              Your responses are being reviewed. We&apos;ll show your feedback in a moment.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* End Interview Confirmation Modal */}
       {showEndConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -863,6 +877,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
             <button
               onClick={handleEndCall}
               className="p-4 rounded-full bg-red-600 hover:bg-red-700"
+              disabled={isCompleting}
             >
               <PhoneOff className="w-6 h-6" />
             </button>
