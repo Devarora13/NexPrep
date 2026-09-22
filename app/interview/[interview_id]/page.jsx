@@ -20,7 +20,7 @@ function Interview() {
   const [interviewDetails, setInterviewDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  // const [interviewData, setInterviewData] = useContext(InterviewDetailsContext);
+  const [interviewData, setInterviewData] = useContext(InterviewDetailsContext);
   useEffect(() => {
     getInterviewDetails();
   }, [interview_id]);
@@ -50,29 +50,29 @@ function Interview() {
   const handleStartInterview = async () => {
     try {
       setLoading(true);
-      // const { data: Interviewdata, error } = await supabase
-      //   .from("InterviewDetails")
-      //   .select("*")
-      //   .eq("interview_id", interview_id);
+      const { data: Interviewdata, error } = await supabase
+        .from("InterviewDetails")
+        .select("*")
+        .eq("interview_id", interview_id);
 
-      // if (error) {
-      //   // Error fetching interview data
-      //   setLoading(false);
-      //   return;
-      // }
+      if (error) {
+        // Error fetching interview data
+        setLoading(false);
+        return;
+      }
 
-      // if (!Interviewdata || Interviewdata.length === 0) {
-      //   // No interview data found
-      //   setLoading(false);
-      //   return;
-      // }
+      if (!Interviewdata || Interviewdata.length === 0) {
+        // No interview data found
+        setLoading(false);
+        return;
+      }
 
       // Interview data fetched successfully
 
-      // setInterviewData({
-      //   username: name,
-      //   interviewData: Interviewdata[0],
-      // });
+      setInterviewData({
+        username: name,
+        interviewData: Interviewdata[0],
+      });
 
       // Short delay to ensure context updates before navigation
       setTimeout(() => {
