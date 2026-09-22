@@ -526,7 +526,7 @@ function PracticeResources() {
       <div className="mt-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-center text-white">
         <h2 className="text-2xl font-bold mb-4">Ready to Start Your Interview Prep?</h2>
         <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-          Use these resources alongside NexPrep's AI-powered mock interviews to maximize your chances of success.
+          Use these resources alongside Veritus's AI-powered mock interviews to maximize your chances of success.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button className="bg-white text-blue-600 hover:bg-blue-50">

@@ -68,7 +68,7 @@ export default function LandingPage() {
       name: "Sarah Chen",
       role: "Software Engineer at Google",
       image: "/avatars/sarah.jpg",
-      content: "NexPrep helped me land my dream job at Google. The AI-generated questions were spot-on and really prepared me for the actual interview.",
+      content: "Veritus helped me land my dream job at Google. The AI-generated questions were spot-on and really prepared me for the actual interview.",
       rating: 5
     },
     {
@@ -82,7 +82,7 @@ export default function LandingPage() {
       name: "Emily Johnson",
       role: "Frontend Developer at Netflix",
       image: "/avatars/emily.jpg",
-      content: "I went from struggling with technical interviews to confidently solving problems. NexPrep's structured approach made all the difference.",
+      content: "I went from struggling with technical interviews to confidently solving problems. Veritus's structured approach made all the difference.",
       rating: 5
     }
   ];
@@ -168,7 +168,7 @@ export default function LandingPage() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <Image src="/NexprepLogo.png" alt="NexPrep Logo" width={120} height={40} />
+              <Image src="/NexprepLogo.png" alt="Veritus Logo" width={120} height={40} />
             </div>
 
             {/* Desktop Navigation */}
@@ -317,7 +317,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              See NexPrep in
+              See Veritus in
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Action</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -386,7 +386,7 @@ export default function LandingPage() {
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Top Performers</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Join thousands of successful candidates who've landed their dream jobs with NexPrep.
+              Join thousands of successful candidates who've landed their dream jobs with Veritus.
             </p>
           </div>
 
@@ -456,7 +456,7 @@ export default function LandingPage() {
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Perfect!</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-8">
-              NexPrep uses a credit-based system to give you AI-powered interview experiences.
+              Veritus uses a credit-based system to give you AI-powered interview experiences.
             </p>
             
             {/* Credit System Info */}
@@ -583,7 +583,7 @@ export default function LandingPage() {
             Ready to Land Your Dream Job?
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-            Join thousands of successful candidates who've used NexPrep to ace their interviews 
+            Join thousands of successful candidates who've used Veritus to ace their interviews 
             and secure positions at top companies.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -611,7 +611,7 @@ export default function LandingPage() {
             {/* Logo and Description */}
             <div className="col-span-1 md:col-span-2">
               <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
-                NexPrep
+                Veritus
               </div>
               <p className="text-gray-400 mb-6 max-w-md">
                 Empowering the next generation of tech professionals with AI-powered interview preparation.
@@ -653,7 +653,7 @@ export default function LandingPage() {
 
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2025 NexPrep. All rights reserved.
+              © 2025 Veritus. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>

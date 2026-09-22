@@ -24,7 +24,7 @@ function CreateOptions() {
             <Notebook className='p-3 text-primary bg-blue-50 rounded-lg h-14 w-14' />
           </div>
           <div>
-            <h2 className='text-xl font-bold text-gray-800 mb-1'>NexPrep Vault</h2>
+            <h2 className='text-xl font-bold text-gray-800 mb-1'>Veritus Vault</h2>
             <p className='text-gray-500'>A curated vault of high-quality resources to help you level up your interview prep, coding skills, and career journey</p>
           </div>
         </div>

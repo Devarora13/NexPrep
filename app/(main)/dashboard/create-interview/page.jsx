@@ -133,8 +133,8 @@ function CreateInterview() {
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [generationError, setGenerationError] = React.useState(null);
-  const [generatedQuestions, setGeneratedQuestions] = React.useState(null);
-  const [showQuestionList, setShowQuestionList] = React.useState(false);
+  // const [generatedQuestions, setGeneratedQuestions] = React.useState(null);
+  // const [showQuestionList, setShowQuestionList] = React.useState(false);
   const [currentInterviewId, setCurrentInterviewId] = React.useState(null);
 
   const handleFinalSubmit = async () => {

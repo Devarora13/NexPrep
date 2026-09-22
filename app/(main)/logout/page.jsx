@@ -52,7 +52,7 @@ function SignOut() {
         <div className='mb-6 flex justify-center'>
           <Image 
             src="/NexprepLogo.png" 
-            alt="NexPrep Logo" 
+            alt="Veritus Logo" 
             width={140} 
             height={40} 
             className='h-auto object-contain' 
@@ -81,7 +81,7 @@ function SignOut() {
               <CheckCircle className='h-8 w-8 text-green-600' />
             </div>
             <h2 className='text-2xl font-bold text-gray-900 mb-2'>Successfully signed out!</h2>
-            <p className='text-gray-600 mb-6'>Thank you for using NexPrep. You have been securely logged out.</p>
+            <p className='text-gray-600 mb-6'>Thank you for using Veritus. You have been securely logged out.</p>
             <p className='text-sm text-gray-500 mb-6'>Redirecting you to home page...</p>
             
             <button

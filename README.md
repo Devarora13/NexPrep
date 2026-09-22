@@ -1,354 +1,221 @@
-# NexPrep - AI-Powered Interview Preparation Platform
+# Veritus — AI-Powered Interview Preparation
 
-![NexPrep Banner](public/NexprepLogo.png)
+Veritus is a Next.js application for creating and reviewing AI-assisted mock interview sessions. It combines Supabase for authentication and persistence, Vapi for browser-based voice conversations, and OpenRouter for post-interview feedback.
 
-**NexPrep** is a cutting-edge SaaS platform that leverages artificial intelligence to provide personalized interview preparation experiences. Our platform helps job seekers practice, improve, and succeed in their interviews through AI-driven mock interviews, real-time feedback, and comprehensive performance analytics.
 
-## 🚀 Features
+## What the application provides
 
-### 🤖 AI-Powered Mock Interviews
+### Account and dashboard
 
-- **Dynamic AI Interview Conversations**: The AI adapts the interview in real time based on the candidate's responses, job role, experience level, and selected interview type. It asks follow-up questions, probes deeper when needed, and adjusts the conversation naturally.
-- **Real-time Voice Interaction**: Conduct live interviews using Vapi AI for natural conversation flow
-- **Multiple Interview Types**: Technical, behavioral, experience-based, problem-solving, and leadership interviews
+- Email/password sign-up and login through Supabase Auth.
+- A `Users` profile record is created for a newly authenticated user, with one initial credit.
+- Dashboard navigation for interview creation, interview history, billing, settings, practice resources, and sign-out.
+- Recent interviews and a full interview-history view backed by Supabase.
 
-### 📊 Comprehensive Analytics & Feedback
+### Interview setup
 
-- **Performance Ratings**: Detailed scoring across technical skills, communication, problem-solving, and experience
-- **AI-Generated Insights**: Intelligent feedback with actionable recommendations
-- **Progress Tracking**: Monitor improvement over time with detailed interview history
+The creation form captures:
 
-### 🎯 Customizable Interview Experience
+- Job position and job description
+- Interview type: `Technical`, `Behavioral`, `HR`, or `System Design`
+- Experience level: entry, mid, senior, or expert
+- Duration: 5, 15, 30, 45, or 60 minutes
+- Difficulty: Easy, Medium, or Hard
 
-- **Role-Specific Preparation**: Support for various positions from entry-level to expert
-- **Difficulty Levels**: Easy, Medium, and Hard interview configurations
-- **Multiple Formats**: Conversational, technical assessments, and mixed formats
-- **Duration Flexibility**: Customizable interview lengths from 5 minutes to 1 hour
+Creating a session writes its metadata to `InterviewDetails`, generates a UUID interview identifier, and deducts one credit from the current user's `Users` record.
 
-### 📚 Learning Resources Hub
+### Voice-interview configuration
 
-- **NexPrep Vault**: Curated collection of high-quality interview preparation resources
-- **Practice Materials**: Coding challenges, behavioral question frameworks, and industry-specific guides
-- **Career Roadmaps**: Structured learning paths for different tech roles
+The live interview page configures Vapi with Deepgram transcription, an ElevenLabs voice, and a `gpt-4o-mini` interviewer model. The interviewer system prompt is designed to:
 
-### 🔐 Secure & Scalable
+- Generate questions dynamically rather than use a fixed list
+- Listen to the candidate's prior response and ask relevant follow-ups
+- Clarify vague answers and increase difficulty after strong answers
+- Challenge weak reasoning while keeping the interview conversational
+- Tailor subject matter to Technical, Behavioral, HR, or System Design interviews
 
-- **Authentication**: Email/password authentication with Supabase Auth and secure session management
-- **Database**: Robust data storage with Supabase integration
-- **Real-time Updates**: Live interview status and feedback delivery
+While a call is active, the page gathers message and transcript events in browser state. On manual completion, it posts the captured conversation to the feedback API and stores the returned review in Supabase.
 
-## 🛠️ Technology Stack
+### Feedback and interview history
 
-### Frontend
+The feedback route evaluates the captured transcript and returns:
 
-- **Framework**: Next.js 14 (App Router)
-- **Styling**: Tailwind CSS + Custom Components
-- **UI Components**: Shadcn/ui component library
-- **Icons**: Lucide React
+- Overall score out of 100
+- Ratings out of 10 for technical skills, communication, problem solving, experience, and confidence
+- Strengths, weaknesses, and areas to improve
+- A summary and hiring recommendation
 
-### Backend & Database
+The feedback page and interview-history pages read this review from the `postinterview` table. A static practice-resources page and a billing UI are also included.
 
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **Real-time**: Supabase Realtime subscriptions
+## Technology stack
 
-### AI & Voice
+| Area | Implementation |
+| --- | --- |
+| Framework | Next.js `15.3.8` with the App Router |
+| UI | React 18, Tailwind CSS 4, Radix/shadcn-style components, Lucide icons |
+| Authentication and data | Supabase Auth and Postgres via `@supabase/supabase-js` |
+| Voice interview | Vapi Web SDK, Deepgram transcription, ElevenLabs voice |
+| Interviewer model | OpenAI `gpt-4o-mini` configured through Vapi |
+| Feedback model | OpenRouter Chat Completions API |
+| Package manager | npm |
 
-- **AI Model**: OpenRouter LLM powering adaptive interview conversations and AI-generated feedback.
-- **Voice AI**: Vapi AI for real-time voice interactions
-- **Natural Language Processing**: Advanced conversation analysis
+## Project structure
 
-### Deployment & DevOps
-
-- **Hosting**: Vercel Platform
-- **Environment**: Environment-based configuration
-- **Version Control**: Git with structured branching
-
-## 📁 Project Structure
-
-```
-nexprep/
-├── app/                          # Next.js App Router
-│   ├── (main)/                   # Main application routes
-│   │   ├── dashboard/            # User dashboard
-│   │   │   ├── create-interview/ # Interview creation flow
-│   │   │   └── practice/         # Practice resources
-│   │   └── all-interviews/       # Interview history
-│   ├── interview/                # Interview experience
-│   │   └── [interview_id]/       # Dynamic interview routes
-│   │       ├── start/            # Interview interface
-│   │       ├── view/             # Interview details
-│   │       └── feedback/         # Results & feedback
-│   ├── api/                      # API endpoints
-│   │   └── ai-feedback/          # AI feedback processing
-│   ├── auth/                     # Authentication pages
-│   └── globals.css               # Global styles
-├── components/                   # Reusable UI components
-│   └── ui/                       # Shadcn/ui components
-├── context/                      # React Context providers
-├── hooks/                        # Custom React hooks
-├── lib/                          # Utility functions
-├── public/                       # Static assets
-└── services/                     # External service integrations
+```text
+app/
+  (main)/
+    dashboard/                       Dashboard, create-interview, practice
+    all-interviews/                  Interview history
+    billing/                         Credit purchase UI (simulated)
+    settings/ and logout/            Account screens
+  api/ai-feedback/                   Server-side OpenRouter feedback endpoint
+  auth/                              Email/password authentication
+  interview/[interview_id]/
+    page.jsx                         Pre-interview session page
+    start/page.jsx                   Vapi interview interface and transcript capture
+    feedback/page.jsx                Detailed feedback presentation
+    view/page.jsx                    Stored interview and review details
+components/                          Shared UI primitives and error boundary
+context/                             User and interview context definitions
+lib/                                 App constants, helpers, validation
+services/                            Supabase client and sidebar constants
+public/                              Static images and demo media
 ```
 
-## 🚀 Getting Started
+## Prerequisites
 
-### Prerequisites
+- Node.js 18 or newer
+- npm
+- A Supabase project
+- An OpenRouter API key for feedback generation
+- A Vapi public API key for browser voice calls
 
-- Node.js 18+ (Download from [nodejs.org](https://nodejs.org/))
-- npm or yarn package manager
-- Git for version control
+## Local setup
 
-### Environment Setup
+1. Clone the repository and install dependencies:
 
-1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
-   cd nexprep
-   ```
-
-2. **Install dependencies**
-   ```bash
+   git clone https://github.com/Devarora13/Veritus.git
+   cd Veritus
    npm install
-   # or
-   yarn install
    ```
 
-3. **Set up environment variables**
-   ```bash
-   # Copy the example environment file
-   cp .env.example .env.local
-   
-   # Edit .env.local with your actual API keys and configuration
-   ```
-
-4. **Required API Keys & Services**
-   
-   **Supabase Setup:**
-   - Create account at [supabase.com](https://supabase.com)
-   - Create new project
-   - Go to Settings > API to get your URL and anon key
-   - Set up authentication and create required tables
-   
-   **OpenRouter API:**
-   - Sign up at [openrouter.ai](https://openrouter.ai)
-   - Generate API key for AI model access
-   
-   **Vapi AI:**
-   - Create account at [vapi.ai](https://vapi.ai)
-   - Get your public API key
-
-5. **Database Setup**
-   ```bash
-   # Run database migrations (if you have them)
-   # Set up your Supabase tables according to your schema
-   ```
-
-6. **Start the development server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-7. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-### Quick Start Guide
-
-1. **Sign up/Login** - Create your account through the auth system
-2. **Create Interview** - Go to Dashboard > Create Interview
-3. **Configure Settings** - Set job role, experience level, and difficulty  
-4. **Start Practice** - Begin your AI-powered mock interview
-5. **Get Feedback** - Receive detailed performance analysis
-
-### Troubleshooting
-
-**Common Issues:**
-- **Build errors**: Ensure all environment variables are set correctly
-- **API failures**: Verify your API keys are valid and have sufficient credits
-- **Audio issues**: Check browser permissions for microphone access
-- **Database errors**: Confirm Supabase connection and table structure
-
-**Getting Help:**
-- Check the console for error messages
-- Verify all environment variables in `.env.local`
-- Ensure your Supabase project is properly configured
-- npm, yarn, pnpm, or bun
-- Supabase account
-- Vapi AI account (for voice features)
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/Devarora13/NexPrep
-   cd nexprep
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. **Environment Setup**
-   Create a `.env.local` file in the root directory:
+2. Create a `.env.local` file in the repository root:
 
    ```env
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   VAPI_API_KEY=your_vapi_api_key
-   AI_MODEL_API_KEY=your_ai_model_key
+   NEXT_PUBLIC_VAPI_KEY=your_vapi_public_key
+   OPENROUTER_API_KEY=your_openrouter_api_key
    ```
 
-4. **Database Setup**
+   `NEXT_PUBLIC_VAPI_KEY` is intentionally available to the browser because it is Vapi's public key. `OPENROUTER_API_KEY` is used only by the server route; do not prefix it with `NEXT_PUBLIC_` or commit it to source control.
 
-   - Set up your Supabase project
-   - Run the database migrations (SQL files in `/database` folder)
-   - Configure authentication providers
+3. Configure Supabase email/password authentication, then create the application tables described below. This repository does not include SQL migrations.
 
-5. **Run the development server**
+4. Start the development server:
 
    ```bash
    npm run dev
    ```
 
-6. **Open your browser**
-   Navigate to [h[ttps://nexprep-v2.vercel.app/](https://nex-prep-phi.vercel.app/)]
+5. Visit [http://localhost:3000](http://localhost:3000).
 
-## 📖 Usage Guide
+## Supabase data model
 
-### Creating Your First Interview
+The client currently references these tables and fields:
 
-1. **Sign Up/Login**: Create an account or sign in to your existing account
-2. **Dashboard Access**: Navigate to your personalized dashboard
-3. **Create Interview**: Click "Create New Interview" and fill out the form:
-   - Job position and description
-   - Experience level and required skills
-   - Interview type and difficulty
-   - Duration and format preferences
-4. **Start the AI Interview**: Launch a live voice conversation with the AI interviewer.
-5. **Dynamic Conversation**: The AI adapts questions based on your responses and asks contextual follow-ups.
-6. **Receive Feedback**: View your overall score, strengths, weaknesses, improvement areas, and hiring recommendation.
+| Table | Fields used by the application |
+| --- | --- |
+| `Users` | `Name`, `email`, `pfp`, `credits` |
+| `InterviewDetails` | `interview_id`, `job_position`, `job_description`, `experience_level`, `interview_type`, `interview_time`, `user_email`, `created_at`; `interview_questions` is read when present |
+| `postinterview` | `interview_id`, `interview_review` |
 
-### Managing Interview History
+`interview_review` is stored as a JSON-compatible object (or a JSON string that the client parses). Configure Row Level Security policies so users can only read and modify their own records. The repository does not include the database schema, constraints, policies, or migrations, so they must be created in Supabase for a deployment.
 
-- **View All Interviews**: Access your complete interview history
-- **Performance Analytics**: Track your progress over time
-- **Detailed Feedback**: Review comprehensive feedback for each session
-- **Export Reports**: Download detailed performance reports
+## Intended interview flow
 
-### Accessing Practice Resources
+1. A user signs up or logs in at `/auth`.
+2. The root provider loads the authenticated user and ensures a `Users` row exists.
+3. The user creates a session at `/dashboard/create-interview`.
+4. Session metadata is inserted into `InterviewDetails`, and one credit is deducted.
+5. The user opens `/interview/[interview_id]`, enters a name, and proceeds to `/interview/[interview_id]/start`.
+6. Vapi runs the configured interactive voice interview and emits transcript events.
+7. On manual end, the browser posts the conversation to `/api/ai-feedback`.
+8. The returned JSON review is inserted into `postinterview` and displayed at `/interview/[interview_id]/feedback`.
 
-- **NexPrep Vault**: Browse curated learning materials
-- **Skill-based Resources**: Find materials specific to your target role
-- **Progress Tracking**: Monitor your learning journey
+Steps 5–8 describe the intended behavior. The current context-hydration issue prevents this end-to-end flow from working through the standard route.
 
-## 🔧 Configuration
+## Feedback API
 
-### Interview Types
+### Request
 
-- **Technical**: Code-related questions, architecture discussions
-- **Behavioral**: STAR method, soft skills assessment
-- **Experience-based**: Past roles and responsibilities
-- **Problem Solving**: Analytical and creative thinking
-- **Leadership**: Team management and strategic thinking
-
-### Difficulty Levels
-
-- **Easy**: Entry-level questions, basic concepts
-- **Medium**: Intermediate challenges, moderate complexity
-- **Hard**: Advanced scenarios, expert-level problems
-
-### Experience Levels
-
-- **Entry Level**: 0-2 years of experience
-- **Mid Level**: 2-5 years of experience
-- **Senior Level**: 5-8 years of experience
-- **Expert Level**: 8+ years of experience
-
-## 🤝 Contributing
-
-We welcome contributions to NexPrep! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow the existing code style and conventions
-- Write meaningful commit messages
-- Add tests for new features
-- Update documentation as needed
-
-## 📝 API Documentation
-
-### Feedback Generation
-
-```javascript
+```http
 POST /api/ai-feedback
+Content-Type: application/json
+```
+
+```json
 {
-  "conversation": "interview_transcript",
-  "interview_id": "uuid"
+  "conversation": [
+    { "role": "assistant", "content": "Tell me about your experience." },
+    { "role": "user", "content": "I have built user-facing React applications." }
+  ]
 }
 ```
 
-## 🚀 Deployment
+`conversation` may be a string or an array of transcript-like objects. The server converts array entries into labelled speaker turns using `role`/`speaker` and `content`/`text`/`transcript` fields. Empty transcripts are rejected with HTTP 400.
 
-### Vercel Deployment (Recommended)
+### Response
 
-1. **Connect your repository** to Vercel
-2. **Configure environment variables** in Vercel dashboard
-3. **Deploy** - Vercel will automatically build and deploy your application
+The route sends the transcript to OpenRouter in a delimited source-material block, requests JSON only, removes Markdown fences if present, and validates the response before returning it. A successful response has this shape:
 
-### Manual Deployment
+```json
+{
+  "feedback": {
+    "overallScore": 0,
+    "rating": {
+      "technicalSkills": 0,
+      "communication": 0,
+      "problemSolving": 0,
+      "experience": 0,
+      "confidence": 0
+    },
+    "strengths": [""],
+    "weaknesses": [""],
+    "areasToImprove": [""],
+    "summary": "",
+    "recommendation": "",
+    "recommendationMsg": ""
+  }
+}
+```
 
-1. **Build the application**
+Scores outside their allowed ranges, missing rating keys, missing list fields, or non-string summary/recommendation fields are rejected with HTTP 502. The route returns 500 when the OpenRouter configuration or upstream call fails.
 
-   ```bash
-   npm run build
-   ```
+## Commands
 
-2. **Start the production server**
-   ```bash
-   npm start
-   ```
+```bash
+npm run dev      # Run the development server
+npm run build    # Create a production build
+npm start        # Run the production server after building
+```
 
-## 📊 Performance & Analytics
+## Deployment
 
-- **Real-time Feedback**: Instant AI-powered performance analysis
-- **Progress Tracking**: Historical performance data and trends
-- **Skill Assessment**: Detailed breakdown of technical and soft skills
-- **Recommendation Engine**: Personalized improvement suggestions
+The project can be deployed to Vercel or another Next.js-compatible host. Add the same environment variables in the host configuration. Ensure that the Supabase redirect URL, allowed origin, database policies, Vapi public key settings, and OpenRouter key are configured for the deployed domain.
 
-## 🔒 Security & Privacy
+## Known limitations
 
-- **Data Encryption**: All user data is encrypted in transit and at rest
-- **Secure Authentication**: Multi-factor authentication support
-- **Privacy Compliant**: GDPR and privacy regulation compliant
-- **Session Management**: Secure session handling and token management
+- **Live interview routing is incomplete.** The pre-interview page fetches `InterviewDetails`, but the code that writes it to `InterviewDetailsContext` is commented out. The `/start` page depends on that context and renders `Interview Data Not Found` when it is empty.
+- **Natural call completion does not reliably produce feedback.** The normal Vapi `call-end` listener only updates the call state. Feedback generation is invoked after the user manually confirms ending the call, and in one error-event path.
+- **Transcript data is transient.** Captured messages are held in browser state. Refreshing or leaving the page before feedback is saved loses the transcript.
+- **Interview difficulty is not persisted or passed to the Vapi interviewer prompt.** It is collected in the creation form but is not included in the `InterviewDetails` insert or the interviewer configuration.
+- **No question-generation endpoint is present.** Interview setup stores metadata; `interview_questions` is only displayed when data already exists in the database.
+- **Billing is simulated.** The billing page waits briefly and shows a success alert; it does not charge a customer or add credits.
+- **No automated tests or database migrations are included.** The `test` script intentionally exits with an error.
+- **Some practice-resource links are placeholders.** Entries using `#` do not navigate to external content.
 
+## License
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Vapi AI** for voice interaction capabilities
-- **Supabase** for backend infrastructure
-- **Vercel** for seamless deployment
-- **Shadcn/ui** for beautiful UI components
-- **Open Source Community** for continuous inspiration
-
-**Made with ❤️ by the Dev Arora**
-
-_Empowering careers through intelligent interview preparation_
+No `LICENSE` file is currently included. Add one before presenting the project as MIT-licensed or under any other license.
