@@ -397,7 +397,6 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
   };
   const GenerateFeedback = async () => {
     if (!interviewData) {
-      alert("No interview data available for feedback generation");
       return;
     }
 
@@ -410,12 +409,11 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
         .limit(1);
 
       if (checkError && checkError.code !== "PGRST116") {
-        alert("Error checking existing feedback: " + checkError.message);
+        console.error("Error checking existing feedback:", checkError);
         return;
       }
 
       if (existingFeedback && existingFeedback.length > 0) {
-        alert("Feedback already exists for this interview");
         return;
       }
 
@@ -441,22 +439,20 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
 
         const { error: insertError } = await supabase
           .from("postinterview")
-          .insert([
+          .upsert(
             {
               interview_id: interviewData?.interviewData?.interview_id,
               interview_review: defaultFeedback,
             },
-          ]);
+            { onConflict: "interview_id", ignoreDuplicates: true },
+          );
 
         if (insertError) {
-          alert("Error inserting default feedback: " + insertError.message);
-        } else {
-          alert("Default feedback created successfully");
+          console.error("Error inserting default feedback:", insertError);
         }
         return;
       }
 
-      alert("Calling AI feedback API with conversation data...");
       const result = await fetch("/api/ai-feedback", {
         method: "POST",
         headers: {
@@ -469,36 +465,32 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
 
       if (!result.ok) {
         const errorText = await result.text();
-        alert(`API request failed with status ${result.status}: ${errorText}`);
+        console.error(`AI feedback request failed with status ${result.status}: ${errorText}`);
         throw new Error(`API request failed with status ${result.status}`);
       }
 
       const data = await result.json();
-      alert("AI feedback generated successfully!");
 
       if (!data || typeof data !== "object") {
-        alert("Invalid feedback data received from API");
         throw new Error("Invalid feedback data received from API");
       }
 
-      alert("Saving feedback to database...");
       const { error: insertError } = await supabase
         .from("postinterview")
-        .insert([
+        .upsert(
           {
             interview_id: interviewData?.interviewData?.interview_id,
             interview_review: data,
           },
-        ]);
+          { onConflict: "interview_id", ignoreDuplicates: true },
+        );
 
       if (insertError) {
-        alert("Database insert failed: " + insertError.message);
+        console.error("Database feedback save failed:", insertError);
         throw new Error(`Database insert failed: ${insertError.message}`);
-      } else {
-        alert("Feedback saved successfully!");
       }
     } catch (error) {
-      alert("Error in feedback generation: " + error.message);
+      console.error("Error in feedback generation:", error);
 
       // Create a fallback feedback entry so the feedback page doesn't crash
       try {
@@ -510,11 +502,9 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
           .limit(1);
 
         if (doubleCheck && doubleCheck.length > 0) {
-          alert("Feedback already exists, skipping fallback creation");
           return;
         }
 
-        alert("Creating fallback feedback...");
         const fallbackFeedback = {
           feedback: {
             summary:
@@ -535,20 +525,19 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
 
         const { error: fallbackError } = await supabase
           .from("postinterview")
-          .insert([
+          .upsert(
             {
               interview_id: interviewData?.interviewData?.interview_id,
               interview_review: fallbackFeedback,
             },
-          ]);
+            { onConflict: "interview_id", ignoreDuplicates: true },
+          );
 
         if (fallbackError) {
-          alert("Error inserting fallback feedback: " + fallbackError.message);
-        } else {
-          alert("Fallback feedback created successfully");
+          console.error("Error inserting fallback feedback:", fallbackError);
         }
       } catch (fallbackError) {
-        alert("Failed to insert fallback feedback: " + fallbackError.message);
+        console.error("Failed to insert fallback feedback:", fallbackError);
       }
     }
   };
