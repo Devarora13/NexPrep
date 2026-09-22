@@ -29,6 +29,9 @@ function Interview() {
   const [interviewData, setInterviewData] = useContext(InterviewDetailsContext);
   const user = useUser();
   const vapiInstanceRef = useRef(null);
+  const isCompletingRef = useRef(false);
+  const conversationRef = useRef([]);
+  const hasSentThirtySecondWarningRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -64,11 +67,16 @@ function Interview() {
           vapiInstanceRef.current.on("call-start", () => {
             setIsCallActive(true);
             setIsTimerActive(true);
+            void supabase
+              .from("InterviewDetails")
+              .update({ status: "in_progress", started_at: new Date().toISOString() })
+              .eq("interview_id", interview_id);
           });
 
           vapiInstanceRef.current.on("call-end", () => {
             setIsCallActive(false);
             setIsTimerActive(false);
+            void completeInterview("disconnected");
           });
 
           vapiInstanceRef.current.on("error", (error) => {
@@ -82,16 +90,7 @@ function Interview() {
             ) {
               setIsCallActive(false);
               setIsTimerActive(false);
-              // Automatically redirect to feedback after call ends
-              setTimeout(() => {
-                GenerateFeedback()
-                  .then(() => {
-                    router.push(`/interview/${interview_id}/feedback`);
-                  })
-                  .catch(() => {
-                    router.push(`/interview/${interview_id}/feedback`);
-                  });
-              }, 1000);
+              void completeInterview("disconnected");
               return; // Don't treat this as a failure
             }
           });
@@ -100,11 +99,13 @@ function Interview() {
           vapiInstanceRef.current.on("call-disconnected", () => {
             setIsCallActive(false);
             setIsTimerActive(false);
+            void completeInterview("disconnected");
           });
 
           vapiInstanceRef.current.on("session-end", () => {
             setIsCallActive(false);
             setIsTimerActive(false);
+            void completeInterview("disconnected");
           });
 
           vapiInstanceRef.current.on("speech-start", () => {});
@@ -118,15 +119,30 @@ function Interview() {
         }
       }
     } else {
-      // Show error after timeout if data doesn't load
-      const timeoutId = setTimeout(() => {
-        if (!interviewData) {
-          setLoadError(true);
-          setLoading(false);
-        }
-      }, 5000);
+      let isMounted = true;
 
-      return () => clearTimeout(timeoutId);
+      supabase
+        .from("InterviewDetails")
+        .select("*")
+        .eq("interview_id", interview_id)
+        .single()
+        .then(({ data, error }) => {
+          if (!isMounted) return;
+          if (error || !data) {
+            setLoadError(true);
+            setLoading(false);
+            return;
+          }
+
+          setInterviewData({
+            username: user?.user?.name || user?.user?.email || "Candidate",
+            interviewData: data,
+          });
+        });
+
+      return () => {
+        isMounted = false;
+      };
     }
 
     // Clean up VAPI on component unmount
@@ -147,13 +163,38 @@ function Interview() {
   useEffect(() => {
     if (interviewData?.interviewData?.interview_time) {
       setTime(interviewData.interviewData.interview_time * 60);
+      hasSentThirtySecondWarningRef.current = false;
     }
   }, [interviewData]);
 
   useEffect(() => {
-    if (!isTimerActive || time <= 0) return;
-    const timer = time > 0 && setInterval(() => setTime(time - 1), 1000);
-    return () => clearInterval(timer);
+    if (!isTimerActive) return;
+    if (time <= 0) {
+      void completeInterview("timeout");
+      return;
+    }
+
+    if (time <= 30 && !hasSentThirtySecondWarningRef.current) {
+      hasSentThirtySecondWarningRef.current = true;
+      try {
+        vapiInstanceRef.current?.send({
+          type: "add-message",
+          message: {
+            role: "system",
+            content:
+              "Only 30 seconds remain in the interview. Ask one final question if needed, then thank the candidate and conclude the interview.",
+          },
+        });
+      } catch {
+        // The hard timeout still ends the interview if VAPI cannot receive this message.
+      }
+    }
+
+    const timer = setTimeout(() => {
+      setTime((currentTime) => Math.max(0, currentTime - 1));
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, [time, isTimerActive]);
 
   const formatTime = (seconds) => {
@@ -277,18 +318,23 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
       vapiInstanceRef.current.on("message", (message) => {
         try {
           if (message?.conversation) {
-            setConversation((prev) => [...prev, ...message.conversation]);
+            conversationRef.current = [
+              ...conversationRef.current,
+              ...message.conversation,
+            ];
+            setConversation(conversationRef.current);
           }
           // Also capture any transcript data
           if (message?.transcript) {
-            setConversation((prev) => [
-              ...prev,
+            conversationRef.current = [
+              ...conversationRef.current,
               {
                 role: message.transcript.role || "user",
                 content:
                   message.transcript.text || message.transcript.content || "",
               },
-            ]);
+            ];
+            setConversation(conversationRef.current);
           }
         } catch (msgError) {
           // Error handling message - continue silently
@@ -299,13 +345,14 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
       vapiInstanceRef.current.on("transcript", (transcript) => {
         try {
           if (transcript?.text || transcript?.content) {
-            setConversation((prev) => [
-              ...prev,
+            conversationRef.current = [
+              ...conversationRef.current,
               {
                 role: transcript.role || "user",
                 content: transcript.text || transcript.content || "",
               },
-            ]);
+            ];
+            setConversation(conversationRef.current);
           }
         } catch (transcriptError) {
           // Error handling transcript - continue silently
@@ -320,13 +367,14 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
       vapiInstanceRef.current.on("speech-end", (data) => {
         // Speech ended - could capture final transcript
         if (data?.transcript) {
-          setConversation((prev) => [
-            ...prev,
+          conversationRef.current = [
+            ...conversationRef.current,
             {
               role: "user",
               content: data.transcript,
             },
-          ]);
+          ];
+          setConversation(conversationRef.current);
         }
       });
     } catch (error) {
@@ -341,24 +389,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
 
   const confirmEndCall = async () => {
     setShowEndConfirmation(false);
-    try {
-      if (vapiInstanceRef.current && isCallActive) {
-        // Attempt to stop the call gracefully
-        try {
-          vapiInstanceRef.current.stop();
-        } catch (stopError) {
-          // If stopping fails, that's okay - call might already be ended
-        }
-      }
-      setIsCallActive(false);
-      setIsTimerActive(false);
-
-      await GenerateFeedback();
-      router.push(`/interview/${interview_id}/feedback`);
-    } catch (error) {
-      // Even if feedback generation fails, redirect to feedback page
-      router.push(`/interview/${interview_id}/feedback`);
-    }
+    await completeInterview("manual");
   };
 
   const cancelEndCall = () => {
@@ -369,9 +400,6 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
       alert("No interview data available for feedback generation");
       return;
     }
-
-    // Debug: Check conversation data
-    alert(`Generating feedback with ${Conversation.length} conversation items`);
 
     try {
       // Check if feedback already exists for this interview
@@ -392,8 +420,8 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
       }
 
       // Check if we have conversation data
-      if (!Conversation || Conversation.length === 0) {
-        alert("No conversation data found. Creating default feedback.");
+      const conversation = conversationRef.current;
+      if (!conversation || conversation.length === 0) {
         // Create a default feedback entry to avoid errors
         const defaultFeedback = {
           feedback: {
@@ -435,7 +463,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          conversation: Conversation,
+          conversation,
         }),
       });
 
@@ -522,6 +550,36 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
       } catch (fallbackError) {
         alert("Failed to insert fallback feedback: " + fallbackError.message);
       }
+    }
+  };
+
+  const completeInterview = async (completionReason) => {
+    if (isCompletingRef.current || !interviewData) return;
+    isCompletingRef.current = true;
+    setIsCallActive(false);
+    setIsTimerActive(false);
+
+    try {
+      if (vapiInstanceRef.current) {
+        try {
+          await vapiInstanceRef.current.stop();
+        } catch {
+          // The call may already have ended.
+        }
+      }
+
+      await supabase
+        .from("InterviewDetails")
+        .update({
+          status: completionReason === "timeout" ? "expired" : "completed",
+          ended_at: new Date().toISOString(),
+          completion_reason: completionReason,
+        })
+        .eq("interview_id", interviewData.interviewData.interview_id);
+
+      await GenerateFeedback();
+    } finally {
+      router.push(`/interview/${interview_id}/feedback`);
     }
   };
 
@@ -687,10 +745,24 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
         </div>
 
         <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2 bg-gray-700 px-3 py-1.5 rounded-full">
+          <div
+            className={`flex items-center space-x-2 px-3 py-1.5 rounded-full ${
+              time <= 60
+                ? "bg-red-600 text-white"
+                : time <= 300
+                  ? "bg-amber-600 text-white"
+                  : "bg-gray-700"
+            }`}
+          >
             <Clock className="text-primary w-4 h-4" />
             <span className="text-sm font-medium">{formatTime(time)}</span>
           </div>
+
+          {isTimerActive && time <= 300 && time > 0 && (
+            <span className="hidden sm:inline text-xs text-amber-300">
+              {time <= 60 ? "Interview ending soon" : "5 minutes remaining"}
+            </span>
+          )}
 
           <button
             onClick={() => setShowChat(!showChat)}

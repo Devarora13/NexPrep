@@ -154,52 +154,26 @@ function CreateInterview() {
       // Generate a unique interview ID
       const interviewId = uuidv4();
 
-      // Get logged-in user's email
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const userEmail =
-        session?.user?.email || user?.user?.email || "anonymous@example.com";
-
-      // Save interview metadata only
-      const { data, error } = await supabase
-        .from("InterviewDetails")
-        .insert({
-          interview_id: interviewId,
-          job_position: submissionData.jobPosition,
-          job_description: submissionData.jobDescription,
-          experience_level: submissionData.experienceLevel,
-          interview_type: submissionData.interviewType,
-          interview_time: extractDurationMinutes(
-            submissionData.interviewDuration,
-          ),
-          user_email: userEmail,
-        })
-        .select();
+      const { data, error } = await supabase.rpc("create_interview", {
+        p_interview_id: interviewId,
+        p_job_position: submissionData.jobPosition,
+        p_job_description: submissionData.jobDescription,
+        p_experience_level: submissionData.experienceLevel,
+        p_interview_time: extractDurationMinutes(
+          submissionData.interviewDuration,
+        ),
+        p_interview_type: submissionData.interviewType,
+        p_difficulty_level: submissionData.difficultyLevel,
+      });
 
       if (error) {
-        console.error("Error saving interview:", error);
-        toast.error("Failed to create interview.");
+        console.error("Error creating interview:", error);
+        toast.error(error.message || "Failed to create interview.");
         return;
       }
 
       console.log("Interview saved:", data);
-
-      // Deduct one credit
-      const { error: creditError } = await supabase
-        .from("Users")
-        .update({
-          credits: user.user.credits - 1,
-        })
-        .eq("email", userEmail);
-
-      if (creditError) {
-        console.error("Credit update failed:", creditError);
-        toast.warning("Interview created but failed to update credits.");
-      } else {
-        toast.success("Interview created successfully!");
-      }
+      toast.success("Interview created successfully!");
 
       // Save interview id
       setCurrentInterviewId(interviewId);
