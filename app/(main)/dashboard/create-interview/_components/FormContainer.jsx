@@ -1,6 +1,7 @@
 "use client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { FileUp } from "lucide-react";
 import React from "react";
 import {
   Select,
@@ -15,6 +16,7 @@ function FormContainer({ formData, updateFormData, errors = {} }) {
   // This ensures our component can render even if props aren't provided
   const data = formData || {};
   const updateData = updateFormData || (() => {});
+  const [resumeName, setResumeName] = React.useState("");
 
   // Helper function to display error message
   const ErrorMessage = ({ field }) => {
@@ -46,6 +48,29 @@ function FormContainer({ formData, updateFormData, errors = {} }) {
             className={errors.jobPosition ? "border-red-500" : ""}
           />
           <ErrorMessage field="jobPosition" />
+        </div>
+
+        {/* Visual-only resume upload control */}
+        <div className="md:col-span-2">
+          <h3 className="text-lg font-semibold mb-2">Resume (Optional)</h3>
+          <label className="flex h-10 w-full cursor-pointer items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm transition-colors hover:bg-gray-50">
+            <span className={resumeName ? "truncate text-gray-800" : "text-muted-foreground"}>
+              {resumeName || "Upload your resume to tailor the interview"}
+            </span>
+            <span className="ml-4 inline-flex shrink-0 items-center gap-2 font-medium text-primary">
+              <FileUp size={16} aria-hidden="true" />
+              {resumeName ? "Change" : "Upload"}
+            </span>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              className="sr-only"
+              onChange={(event) => setResumeName(event.target.files?.[0]?.name || "")}
+            />
+          </label>
+          <p className="mt-1 text-sm text-gray-500">
+            Your resume will be used to personalize this interview.
+          </p>
         </div>
 
         {/* Interview Type */}

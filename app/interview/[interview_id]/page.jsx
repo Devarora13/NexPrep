@@ -141,7 +141,7 @@ function Interview() {
           <div className="bg-white border-2 border-secondary rounded-xl shadow-md overflow-hidden">
             <div className="p-3 flex items-center justify-center">
               <Image
-                src="/2.png"
+                src="/NexprepLogo.png"
                 alt="Interview Header"
                 width={200}
                 height={150}
