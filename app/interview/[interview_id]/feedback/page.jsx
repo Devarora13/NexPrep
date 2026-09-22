@@ -158,11 +158,11 @@ function Feedback() {
       <div className="bg-gray-800 border-b border-gray-700 p-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push("/dashboard")}
             className="flex items-center text-gray-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Interview
+            Back to Dashboard
           </button>
           <h1 className="text-2xl font-bold">Interview Feedback</h1>
           <button onClick={() => window.print()} className="flex items-center text-gray-300 hover:text-white transition-colors">
