@@ -195,7 +195,7 @@ export default function LandingPage() {
             <Link href="/" className="flex items-center">
               <Image
                 src="/NexprepLogo.png"
-                alt="Veritus Logo"
+                alt="NexPrep Logo"
                 width={120}
                 height={40}
               />
@@ -381,7 +381,7 @@ export default function LandingPage() {
             <div>
               <div className="inline-flex items-center px-4 py-2 bg-purple-100 rounded-full text-purple-700 text-sm font-medium mb-6">
                 <Brain className="w-4 h-4 mr-2" />
-                The VERITUS Ecosystem
+                The NexPrep Ecosystem
               </div>
 
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -393,7 +393,7 @@ export default function LandingPage() {
               </h2>
 
               <p className="text-lg text-gray-600 leading-relaxed mb-8">
-                VERITUS brings career assessment, skill-gap analysis, resume
+                NexPrep brings career assessment, skill-gap analysis, resume
                 optimization, learning, coding practice, interviews, and
                 progress tracking together in one intelligent ecosystem.
               </p>
@@ -461,7 +461,7 @@ export default function LandingPage() {
             </h2>
 
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              VERITUS connects assessment, preparation, practice, and
+              NexPrep connects assessment, preparation, practice, and
               evaluation into one continuous career-readiness journey.
             </p>
           </div>
@@ -611,7 +611,7 @@ export default function LandingPage() {
               </h3>
 
               <p className="text-gray-600 mb-8 leading-relaxed">
-                Upload your resume and job description. VERITUS analyzes the
+                Upload your resume and job description. NexPrep analyzes the
                 alignment between your experience and target role requirements
                 while keeping the optimization grounded in your actual profile.
               </p>
@@ -639,7 +639,7 @@ export default function LandingPage() {
               </h3>
 
               <p className="text-gray-600 mb-8 leading-relaxed">
-                VERITUS compares your validated profile with target-role
+                NexPrep compares your validated profile with target-role
                 requirements and converts identified gaps into actionable
                 preparation priorities.
               </p>
@@ -857,7 +857,7 @@ export default function LandingPage() {
             </h2>
 
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              VERITUS combines modern web technologies, AI processing,
+              NexPrep combines modern web technologies, AI processing,
               structured data, and speech processing to deliver personalized
               career intelligence.
             </p>
@@ -903,7 +903,7 @@ export default function LandingPage() {
               size="lg"
               className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4"
             >
-              Start Your VERITUS Journey
+              Start Your NexPrep Journey
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
@@ -916,7 +916,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div>
               <div className="text-3xl font-bold mb-4">
-                VERITUS
+                NexPrep
               </div>
 
               <p className="text-gray-400 max-w-md leading-relaxed">
@@ -968,7 +968,7 @@ export default function LandingPage() {
 
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © {new Date().getFullYear()} VERITUS. All rights reserved.
+              © {new Date().getFullYear()} NexPrep. All rights reserved.
             </p>
 
             <p className="text-gray-500 text-sm mt-3 md:mt-0">

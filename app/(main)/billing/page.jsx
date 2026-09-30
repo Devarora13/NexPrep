@@ -109,7 +109,7 @@ function Billing() {
           </h1>
           
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            Veritus uses a credit-based system to give you AI-powered interview experiences.
+            NexPrep uses a credit-based system to give you AI-powered interview experiences.
           </p>
 
           {/* Current Credits Display */}

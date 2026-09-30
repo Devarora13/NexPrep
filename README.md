@@ -1,6 +1,6 @@
-# Veritus — AI-Powered Interview Preparation
+# NexPrep — AI-Powered Interview Preparation
 
-Veritus is a Next.js application for creating and reviewing AI-assisted mock interview sessions. It combines Supabase for authentication and persistence, Vapi for browser-based voice conversations, and OpenRouter for post-interview feedback.
+NexPrep is a Next.js application for creating and reviewing AI-assisted mock interview sessions. It combines Supabase for authentication and persistence, Vapi for browser-based voice conversations, and OpenRouter for post-interview feedback.
 
 
 ## What the application provides
@@ -95,8 +95,8 @@ public/                              Static images and demo media
 1. Clone the repository and install dependencies:
 
    ```bash
-   git clone https://github.com/Devarora13/Veritus.git
-   cd Veritus
+   git clone https://github.com/Devarora13/NexPrep.git
+   cd NexPrep
    npm install
    ```
 

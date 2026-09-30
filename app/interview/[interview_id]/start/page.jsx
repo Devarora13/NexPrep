@@ -796,7 +796,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
                   />
                 </div>
                 <p className="text-lg font-medium">AI Interviewer</p>
-                <p className="text-sm text-gray-400">Veritus Assistant</p>
+                <p className="text-sm text-gray-400">NexPrep Assistant</p>
 
                 {/* Call controls */}
                 {isCallActive ? (
