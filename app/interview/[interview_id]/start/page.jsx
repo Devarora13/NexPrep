@@ -22,6 +22,7 @@ import { useUser } from "@/app/provider";
 import Vapi from "@vapi-ai/web";
 import { supabase } from "@/services/supabaseClient";
 import { API_CONFIG, ERROR_MESSAGES } from "@/lib/constants";
+import { applyInterviewScore } from "@/lib/career-readiness";
 
 function Interview() {
   const { interview_id } = useParams();
@@ -43,8 +44,7 @@ function Interview() {
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [showEndConfirmation, setShowEndConfirmation] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
-
-  const [Conversation, setConversation] = useState([]);
+  const [careerProfile, setCareerProfile] = useState(null);
 
   useEffect(() => {
     if (interviewData) {
@@ -158,6 +158,17 @@ function Interview() {
     };
   }, [interviewData]);
 
+  useEffect(() => {
+    const userEmail = user?.user?.email;
+    if (!userEmail) return;
+    supabase
+      .from("CareerProfiles")
+      .select("target_role, analysis")
+      .eq("user_email", userEmail)
+      .maybeSingle()
+      .then(({ data }) => setCareerProfile(data || null));
+  }, [user?.user?.email]);
+
   // Timer logic
   const [time, setTime] = useState(30 * 60);
 
@@ -213,6 +224,10 @@ function Interview() {
     }
 
     try {
+      const profileAnalysis = careerProfile?.analysis;
+      const matchedSkills = profileAnalysis?.matchedSkills?.join(", ") || "Not available";
+      const skillGaps = profileAnalysis?.skillGaps?.join(", ") || "Not available";
+      const roadmapFocus = profileAnalysis?.priorityActions?.[0] || "Not available";
       // Simplified assistant configuration
       const assistantOptions = {
         name: "AI Interviewer",
@@ -248,6 +263,12 @@ ${interviewData?.interviewData?.experience_level}
 
 Job Description:
 ${interviewData?.interviewData?.job_description}
+
+VERITUS Career Profile:
+Target role: ${careerProfile?.target_role || "Not available"}
+Verified / matched skills: ${matchedSkills}
+Priority skill gaps: ${skillGaps}
+Recommended preparation focus: ${roadmapFocus}
 
 Rules:
 
@@ -290,6 +311,8 @@ Focus on motivation, strengths, weaknesses, culture fit, career goals and person
 
 If interview type is System Design:
 Focus on architecture, scalability, databases, caching, load balancing, distributed systems and trade-offs.
+
+13. Use the VERITUS profile only to tailor follow-up questions. Do not mention its score, gaps, or private resume information unless the candidate brings it up.
 `,
             },
           ],
@@ -316,26 +339,43 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
         });
 
       // Enhanced message and transcript handling
+      const appendConversationEntries = (entries) => {
+        const normalizedEntries = entries
+          .map((entry) => ({
+            role: entry?.role || entry?.speaker || "unknown",
+            content: String(
+              entry?.content || entry?.text || entry?.transcript || "",
+            ).trim(),
+          }))
+          .filter((entry) => entry.content);
+
+        const existingKeys = new Set(
+          conversationRef.current.map(
+            (entry) => `${entry.role}:${entry.content}`,
+          ),
+        );
+        const newEntries = normalizedEntries.filter((entry) => {
+          const key = `${entry.role}:${entry.content}`;
+          if (existingKeys.has(key)) return false;
+          existingKeys.add(key);
+          return true;
+        });
+
+        if (newEntries.length > 0) {
+          conversationRef.current = [
+            ...conversationRef.current,
+            ...newEntries,
+          ];
+        }
+      };
+
       vapiInstanceRef.current.on("message", (message) => {
         try {
           if (message?.conversation) {
-            conversationRef.current = [
-              ...conversationRef.current,
-              ...message.conversation,
-            ];
-            setConversation(conversationRef.current);
+            appendConversationEntries(message.conversation);
           }
-          // Also capture any transcript data
           if (message?.transcript) {
-            conversationRef.current = [
-              ...conversationRef.current,
-              {
-                role: message.transcript.role || "user",
-                content:
-                  message.transcript.text || message.transcript.content || "",
-              },
-            ];
-            setConversation(conversationRef.current);
+            appendConversationEntries([message.transcript]);
           }
         } catch (msgError) {
           // Error handling message - continue silently
@@ -346,38 +386,17 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
       vapiInstanceRef.current.on("transcript", (transcript) => {
         try {
           if (transcript?.text || transcript?.content) {
-            conversationRef.current = [
-              ...conversationRef.current,
-              {
-                role: transcript.role || "user",
-                content: transcript.text || transcript.content || "",
-              },
-            ];
-            setConversation(conversationRef.current);
+            appendConversationEntries([transcript]);
           }
         } catch (transcriptError) {
           // Error handling transcript - continue silently
         }
       });
 
-      // Add speech handlers for additional data capture
       vapiInstanceRef.current.on("speech-start", (data) => {
         // Speech started - could capture metadata
       });
 
-      vapiInstanceRef.current.on("speech-end", (data) => {
-        // Speech ended - could capture final transcript
-        if (data?.transcript) {
-          conversationRef.current = [
-            ...conversationRef.current,
-            {
-              role: "user",
-              content: data.transcript,
-            },
-          ];
-          setConversation(conversationRef.current);
-        }
-      });
     } catch (error) {
       alert("Failed to start the interview call. Please try again.");
     }
@@ -396,6 +415,27 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
   const cancelEndCall = () => {
     setShowEndConfirmation(false);
   };
+  const updateCareerReadiness = async (feedback) => {
+    const userEmail = user?.user?.email;
+    if (!userEmail) return;
+    let targetAnalysis = careerProfile?.analysis;
+    if (!targetAnalysis) {
+      const { data: dbProfile } = await supabase
+        .from("CareerProfiles")
+        .select("analysis")
+        .eq("user_email", userEmail)
+        .maybeSingle();
+      targetAnalysis = dbProfile?.analysis;
+    }
+    if (!targetAnalysis) return;
+    const analysis = applyInterviewScore(targetAnalysis, feedback);
+    if (!analysis) return;
+    const { error } = await supabase
+      .from("CareerProfiles")
+      .update({ analysis, updated_at: new Date().toISOString() })
+      .eq("user_email", userEmail);
+    if (!error) setCareerProfile((profile) => ({ ...profile, analysis }));
+  };
   const GenerateFeedback = async () => {
     if (!interviewData) {
       return;
@@ -404,7 +444,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
     try {
       // Check if feedback already exists for this interview
       const { data: existingFeedback, error: checkError } = await supabase
-        .from("postinterview")
+        .from("PostInterview")
         .select("interview_id")
         .eq("interview_id", interviewData?.interviewData?.interview_id)
         .limit(1);
@@ -435,11 +475,13 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
               problemSolving: 3,
               experience: 3,
             },
+            source: "fallback_empty_transcript",
           },
+          transcript: [],
         };
 
         const { error: insertError } = await supabase
-          .from("postinterview")
+          .from("PostInterview")
           .upsert(
             {
               interview_id: interviewData?.interviewData?.interview_id,
@@ -454,13 +496,21 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
         return;
       }
 
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("Authentication session expired");
+      }
+
       const result = await fetch("/api/ai-feedback", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           conversation,
+          interviewId: interviewData?.interviewData?.interview_id,
         }),
       });
 
@@ -477,11 +527,14 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
       }
 
       const { error: insertError } = await supabase
-        .from("postinterview")
+        .from("PostInterview")
         .upsert(
           {
             interview_id: interviewData?.interviewData?.interview_id,
-            interview_review: data,
+            interview_review: {
+              ...data,
+              transcript: conversation,
+            },
           },
           { onConflict: "interview_id", ignoreDuplicates: true },
         );
@@ -490,6 +543,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
         console.error("Database feedback save failed:", insertError);
         throw new Error(`Database insert failed: ${insertError.message}`);
       }
+      await updateCareerReadiness(data.feedback);
     } catch (error) {
       console.error("Error in feedback generation:", error);
 
@@ -497,7 +551,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
       try {
         // Check again if feedback was created by another process
         const { data: doubleCheck } = await supabase
-          .from("postinterview")
+          .from("PostInterview")
           .select("interview_id")
           .eq("interview_id", interviewData?.interviewData?.interview_id)
           .limit(1);
@@ -520,12 +574,14 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
               problemSolving: 5,
               experience: 5,
             },
+            source: "fallback_generation_error",
           },
           error: error.message,
+          transcript: conversationRef.current,
         };
 
         const { error: fallbackError } = await supabase
-          .from("postinterview")
+          .from("PostInterview")
           .upsert(
             {
               interview_id: interviewData?.interviewData?.interview_id,
@@ -796,7 +852,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
                   />
                 </div>
                 <p className="text-lg font-medium">AI Interviewer</p>
-                <p className="text-sm text-gray-400">NexPrep Assistant</p>
+                <p className="text-sm text-gray-400">VERITUS Assistant</p>
 
                 {/* Call controls */}
                 {isCallActive ? (

@@ -56,7 +56,7 @@ function AllInterviews() {
       const interviewsWithFeedback = await Promise.all(
         interviewsData.map(async (interview) => {
           const { data: feedbackData } = await supabase
-            .from('postinterview')
+            .from('PostInterview')
             .select('interview_review')
             .eq('interview_id', interview.interview_id)
             .maybeSingle();

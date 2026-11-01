@@ -1,8 +1,9 @@
 "use client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileUp } from "lucide-react";
-import React from "react";
+import { FileUp, Loader2, Sparkles, Brain, CheckCircle2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Select,
   SelectContent,
@@ -10,13 +11,98 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useUser } from "@/app/provider";
+import { supabase } from "@/services/supabaseClient";
+import { toast } from "sonner";
 
-// Updated to single form layout
+// Updated to single form layout with VERITUS Career Profile integration
 function FormContainer({ formData, updateFormData, errors = {} }) {
-  // This ensures our component can render even if props aren't provided
   const data = formData || {};
   const updateData = updateFormData || (() => {});
-  const [resumeName, setResumeName] = React.useState("");
+  const { user } = useUser();
+  const [resumeName, setResumeName] = useState("");
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [careerProfile, setCareerProfile] = useState(null);
+
+  useEffect(() => {
+    const userEmail = user?.email;
+    if (!userEmail) return;
+
+    supabase
+      .from("CareerProfiles")
+      .select("target_role, job_description, resume_text, analysis")
+      .eq("user_email", userEmail)
+      .maybeSingle()
+      .then(({ data: profile, error }) => {
+        if (!error && profile) {
+          setCareerProfile(profile);
+          if (profile.resume_text) {
+            setResumeName("Profile Resume (Linked)");
+          }
+        }
+      });
+  }, [user?.email]);
+
+  const handleAutofillFromProfile = () => {
+    if (!careerProfile) return;
+    if (careerProfile.target_role) {
+      updateData("jobPosition", careerProfile.target_role);
+    }
+    if (careerProfile.job_description) {
+      updateData("jobDescription", careerProfile.job_description);
+    }
+    toast.success("Form pre-filled from your VERITUS Career Profile!");
+  };
+
+  const handleResumeUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsExtracting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Please sign in to upload your resume.");
+
+      const uploadData = new FormData();
+      uploadData.append("resume", file);
+
+      const response = await fetch("/api/resume-extract", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: uploadData,
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to extract resume text");
+      }
+
+      setResumeName(payload.fileName);
+      toast.success("Resume parsed successfully! It will be used by your AI Interviewer.");
+
+      // If user has no career profile yet, create a baseline profile so the interviewer uses it
+      if (user?.email) {
+        await supabase
+          .from("CareerProfiles")
+          .upsert(
+            {
+              user_email: user.email,
+              target_role: data.jobPosition || "Software Engineer",
+              job_description: data.jobDescription || "",
+              resume_text: payload.resumeText,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_email" }
+          );
+      }
+    } catch (err) {
+      toast.error(err.message || "Could not read resume file.");
+    } finally {
+      setIsExtracting(false);
+      event.target.value = "";
+    }
+  };
 
   // Helper function to display error message
   const ErrorMessage = ({ field }) => {
@@ -31,10 +117,44 @@ function FormContainer({ formData, updateFormData, errors = {} }) {
           Create Your Interview
         </h2>
         <p className="text-gray-600">
-          Fill in the essential details below to generate customized interview
-          questions
+          Fill in the essential details below to generate customized interview questions
         </p>
       </div>
+
+      {/* VERITUS Career Profile Auto-Fill Banner */}
+      {careerProfile && (
+        <div className="mb-6 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-indigo-600 p-2 text-white">
+              <Brain className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-indigo-700">VERITUS Profile Found</p>
+              <h4 className="font-semibold text-gray-900">{careerProfile.target_role}</h4>
+              <p className="text-xs text-gray-600">
+                Readiness: {careerProfile?.analysis?.readinessScore?.overall || 0}/100
+                {careerProfile?.analysis?.matchedSkills?.length ? ` · ${careerProfile.analysis.matchedSkills.length} verified skills` : ""}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAutofillFromProfile}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow hover:bg-indigo-700 transition"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Auto-fill from Profile
+            </button>
+            <Link
+              href="/dashboard/career-profile"
+              className="rounded-lg border border-indigo-200 px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-white transition"
+            >
+              Edit Profile
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Single Form with Essential Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -50,33 +170,39 @@ function FormContainer({ formData, updateFormData, errors = {} }) {
           <ErrorMessage field="jobPosition" />
         </div>
 
-        {/* Visual-only resume upload control */}
+        {/* Real resume upload with text extraction */}
         <div className="md:col-span-2">
           <h3 className="text-lg font-semibold mb-2">Resume (Optional)</h3>
-          <label className="flex h-10 w-full cursor-pointer items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-            <span className={resumeName ? "truncate text-gray-800" : "text-muted-foreground"}>
-              {resumeName || "Upload your resume to tailor the interview"}
+          <label className="flex h-12 w-full cursor-pointer items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm transition-colors hover:bg-gray-50">
+            <span className={resumeName ? "truncate text-gray-800 font-medium" : "text-muted-foreground"}>
+              {isExtracting ? "Extracting resume text..." : resumeName || "Upload resume (PDF, DOCX, TXT) to tailor the interview"}
             </span>
             <span className="ml-4 inline-flex shrink-0 items-center gap-2 font-medium text-primary">
-              <FileUp size={16} aria-hidden="true" />
+              {isExtracting ? (
+                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+              ) : (
+                <FileUp size={16} aria-hidden="true" />
+              )}
               {resumeName ? "Change" : "Upload"}
             </span>
             <input
               type="file"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
               className="sr-only"
-              onChange={(event) => setResumeName(event.target.files?.[0]?.name || "")}
+              disabled={isExtracting}
+              onChange={handleResumeUpload}
             />
           </label>
-          <p className="mt-1 text-sm text-gray-500">
-            Your resume will be used to personalize this interview.
+          <p className="mt-1 text-xs text-gray-500">
+            {resumeName
+              ? "✓ Resume loaded. Your AI Interviewer will adapt its questions to your projects and skills."
+              : "Upload a PDF, DOCX, or TXT file to automatically align the interview with your background."}
           </p>
         </div>
 
         {/* Interview Type */}
         <div>
           <h3 className="text-lg font-semibold mb-2">Interview Type *</h3>
-
           <Select
             value={data.interviewType || ""}
             onValueChange={(value) => updateData("interviewType", value)}
@@ -86,7 +212,6 @@ function FormContainer({ formData, updateFormData, errors = {} }) {
             >
               <SelectValue placeholder="Select Interview Type" />
             </SelectTrigger>
-
             <SelectContent>
               <SelectItem value="Technical">Technical</SelectItem>
               <SelectItem value="Behavioral">Behavioral</SelectItem>
@@ -94,7 +219,6 @@ function FormContainer({ formData, updateFormData, errors = {} }) {
               <SelectItem value="System Design">System Design</SelectItem>
             </SelectContent>
           </Select>
-
           <ErrorMessage field="interviewType" />
         </div>
 
@@ -154,6 +278,7 @@ function FormContainer({ formData, updateFormData, errors = {} }) {
           />
           <ErrorMessage field="jobDescription" />
         </div>
+
         {/* Difficulty Level */}
         <div className="md:col-span-2">
           <h3 className="text-lg font-semibold mb-2">Difficulty Level *</h3>
@@ -204,7 +329,6 @@ function FormContainer({ formData, updateFormData, errors = {} }) {
             {data.interviewType && (
               <div>
                 <span className="font-medium text-gray-600">Type:</span>
-
                 <p className="text-gray-800">{data.interviewType}</p>
               </div>
             )}
@@ -248,7 +372,7 @@ function FormContainer({ formData, updateFormData, errors = {} }) {
         data.difficultyLevel && (
           <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-2 text-green-700">
-              <span className="text-lg">✅</span>
+              <CheckCircle2 className="h-5 w-5" />
               <span className="font-medium">
                 All required fields completed! Ready to create your interview.
               </span>
