@@ -1,4 +1,4 @@
-import { Calendar, LayoutDashboard, List, LogOut, Settings, WalletCards } from "lucide-react"
+import { Calendar, LayoutDashboard, List, LogOut, Settings, WalletCards, Brain, ClipboardCheck, BookOpen } from "lucide-react"
 
 export const SidebarConstant =[
 
@@ -12,6 +12,21 @@ export const SidebarConstant =[
         name: "All Interviews",
         icon: List,
         path: "/all-interviews",
+    },
+    {
+        name: "Career Profile",
+        icon: Brain,
+        path: "/dashboard/career-profile",
+    },
+    {
+        name: "Assessment",
+        icon: ClipboardCheck,
+        path: "/dashboard/assessment",
+    },
+    {
+        name: "Practice Vault",
+        icon: BookOpen,
+        path: "/dashboard/practice",
     },
     {
         name: "Billing",
@@ -35,9 +50,5 @@ import {
   BriefcaseBusinessIcon,
   Puzzle,
   MessageSquare,
-  Brain,
   Speech,
 } from "lucide-react";
-
-
-

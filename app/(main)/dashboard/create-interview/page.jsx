@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import FormContainer from "./_components/FormContainer";
 import ConfirmationModal from "./_components/ConfirmationModal";
-import QuestionList from "./_components/QuestionList";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/services/supabaseClient";
 import { useUser } from "@/app/provider";
@@ -58,6 +57,7 @@ function CreateInterview() {
     }
     if (!formData.interviewType) {
       newErrors.interviewType = "Interview Type is required";
+      isValid = false;
     }
     if (!formData.jobDescription.trim()) {
       newErrors.jobDescription = "Job description is required";
@@ -132,11 +132,6 @@ function CreateInterview() {
   };
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [generationError, setGenerationError] = React.useState(null);
-  const [generatedQuestions, setGeneratedQuestions] = React.useState(null);
-  const [showQuestionList, setShowQuestionList] = React.useState(false);
-  const [currentInterviewId, setCurrentInterviewId] = React.useState(null);
-
   const handleFinalSubmit = async () => {
     try {
       setIsSubmitting(true);
@@ -154,7 +149,7 @@ function CreateInterview() {
       // Generate a unique interview ID
       const interviewId = uuidv4();
 
-      const { data, error } = await supabase.rpc("create_interview", {
+      const { error } = await supabase.rpc("create_interview", {
         p_interview_id: interviewId,
         p_job_position: submissionData.jobPosition,
         p_job_description: submissionData.jobDescription,
@@ -172,11 +167,7 @@ function CreateInterview() {
         return;
       }
 
-      console.log("Interview saved:", data);
       toast.success("Interview created successfully!");
-
-      // Save interview id
-      setCurrentInterviewId(interviewId);
 
       // Close modal
       setShowConfirmationModal(false);
@@ -185,7 +176,6 @@ function CreateInterview() {
       router.push(`/interview/${interviewId}`);
     } catch (error) {
       console.error(error);
-      setGenerationError(error.message);
       toast.error(`Error creating interview: ${error.message}`);
     } finally {
       setIsSubmitting(false);

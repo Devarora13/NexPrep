@@ -1,6 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { API_CONFIG } from "@/lib/constants";
+import { createClient } from "@supabase/supabase-js";
 
 function constructInterviewPrompt() {
     return `
@@ -136,7 +137,51 @@ export async function POST(req) {
       throw new Error("OPENROUTER_API_KEY is not configured");
     }
 
+    const authorization = req.headers.get("authorization");
+    const accessToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+    if (!accessToken) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      },
+    );
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(accessToken);
+
+    if (authError || !user?.email) {
+      return NextResponse.json({ error: "Invalid authentication" }, { status: 401 });
+    }
+
     const body = await req.json();
+    const interviewId = body?.interviewId;
+    if (!interviewId) {
+      return NextResponse.json({ error: "Interview ID is required" }, { status: 400 });
+    }
+
+    const { data: interview, error: interviewError } = await supabase
+      .from("InterviewDetails")
+      .select("user_email")
+      .eq("interview_id", interviewId)
+      .maybeSingle();
+
+    if (interviewError) {
+      throw interviewError;
+    }
+    if (!interview || interview.user_email !== user.email) {
+      return NextResponse.json({ error: "Interview access denied" }, { status: 403 });
+    }
+
     const transcript = formatConversation(body?.conversation);
     if (!transcript) {
       return NextResponse.json(

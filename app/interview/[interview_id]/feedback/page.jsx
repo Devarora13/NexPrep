@@ -18,7 +18,7 @@ function Feedback() {
       setError(null);
 
       let { data, error } = await supabase
-        .from("postinterview")
+        .from("PostInterview")
         .select("interview_id, interview_review")
         .eq("interview_id", interview_id)
         .maybeSingle();

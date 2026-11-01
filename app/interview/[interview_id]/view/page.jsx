@@ -66,7 +66,7 @@ function ViewInterview() {
 
       // Fetch feedback if exists
       const { data: feedbackData, error: feedbackError } = await supabase
-        .from('postinterview')
+        .from('PostInterview')
         .select("interview_id, interview_review")
         .eq('interview_id', interviewId)
         .maybeSingle();

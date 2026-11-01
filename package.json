@@ -13,9 +13,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
     "@radix-ui/react-dialog": "^1.1.14",
-    "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
@@ -25,8 +23,9 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.517.0",
+    "mammoth": "^1.10.0",
     "next": "15.3.8",
-    "openai": "^5.8.1",
+    "pdf-parse": "^1.1.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "sonner": "^2.0.6",
