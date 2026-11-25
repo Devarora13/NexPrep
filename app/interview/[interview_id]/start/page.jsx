@@ -22,7 +22,6 @@ import { useUser } from "@/app/provider";
 import Vapi from "@vapi-ai/web";
 import { supabase } from "@/services/supabaseClient";
 import { API_CONFIG, ERROR_MESSAGES } from "@/lib/constants";
-import { applyInterviewScore } from "@/lib/career-readiness";
 
 function Interview() {
   const { interview_id } = useParams();
@@ -71,7 +70,7 @@ function Interview() {
             void supabase
               .from("InterviewDetails")
               .update({ status: "in_progress", started_at: new Date().toISOString() })
-              .eq("interview_id", interview_id);
+              .eq("interview_id", interview_id).then(({ error }) => { if (error) console.error("Could not mark session active", error.message); });
           });
 
           vapiInstanceRef.current.on("call-end", () => {
@@ -258,6 +257,8 @@ ${interviewData?.interviewData?.job_position}
 Interview Type:
 ${interviewData?.interviewData?.interview_type}
 
+Start at ${interviewData.interviewData.difficulty_level || "Medium"} difficulty. Adapt based on answers.
+
 Experience Level:
 ${interviewData?.interviewData?.experience_level}
 
@@ -295,7 +296,7 @@ move naturally to another topic.
 
 10. Keep the interview conversational.
 
-11. After around 25 minutes or when enough information has been gathered,
+11. Within the selected ${interviewData.interviewData.interview_time || 30}-minute session,
 end naturally by thanking the candidate.
 
 12. Interview Type Rules:
@@ -309,7 +310,7 @@ Focus on STAR-based questions, teamwork, leadership, conflict resolution and com
 If interview type is HR:
 Focus on motivation, strengths, weaknesses, culture fit, career goals and personality.
 
-If interview type is System Design:
+If interview type is System or System Design:
 Focus on architecture, scalability, databases, caching, load balancing, distributed systems and trade-offs.
 
 13. Use the VERITUS profile only to tailor follow-up questions. Do not mention its score, gaps, or private resume information unless the candidate brings it up.
@@ -347,7 +348,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
               entry?.content || entry?.text || entry?.transcript || "",
             ).trim(),
           }))
-          .filter((entry) => entry.content);
+          .filter((entry) => entry.content && ["user", "assistant", "candidate", "bot"].includes(entry.role));
 
         const existingKeys = new Set(
           conversationRef.current.map(
@@ -374,8 +375,8 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
           if (message?.conversation) {
             appendConversationEntries(message.conversation);
           }
-          if (message?.transcript) {
-            appendConversationEntries([message.transcript]);
+          if (message?.type === "transcript" && message.transcriptType === "final") {
+            appendConversationEntries([message]);
           }
         } catch (msgError) {
           // Error handling message - continue silently
@@ -415,27 +416,6 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
   const cancelEndCall = () => {
     setShowEndConfirmation(false);
   };
-  const updateCareerReadiness = async (feedback) => {
-    const userEmail = user?.user?.email;
-    if (!userEmail) return;
-    let targetAnalysis = careerProfile?.analysis;
-    if (!targetAnalysis) {
-      const { data: dbProfile } = await supabase
-        .from("CareerProfiles")
-        .select("analysis")
-        .eq("user_email", userEmail)
-        .maybeSingle();
-      targetAnalysis = dbProfile?.analysis;
-    }
-    if (!targetAnalysis) return;
-    const analysis = applyInterviewScore(targetAnalysis, feedback);
-    if (!analysis) return;
-    const { error } = await supabase
-      .from("CareerProfiles")
-      .update({ analysis, updated_at: new Date().toISOString() })
-      .eq("user_email", userEmail);
-    if (!error) setCareerProfile((profile) => ({ ...profile, analysis }));
-  };
   const GenerateFeedback = async () => {
     if (!interviewData) {
       return;
@@ -460,7 +440,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
 
       // Check if we have conversation data
       const conversation = conversationRef.current;
-      if (!conversation || conversation.length === 0) {
+      if (!conversation.some(turn => ["user", "candidate"].includes(turn.role))) {
         // Create a default feedback entry to avoid errors
         const defaultFeedback = {
           feedback: {
@@ -469,12 +449,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
             recommendation: "Retry",
             recommendationMsg:
               "Please try the interview again to ensure proper conversation recording.",
-            rating: {
-              technicalSkills: 3,
-              communication: 3,
-              problemSolving: 3,
-              experience: 3,
-            },
+            rating: null,
             source: "fallback_empty_transcript",
           },
           transcript: [],
@@ -515,9 +490,8 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
       });
 
       if (!result.ok) {
-        const errorText = await result.text();
-        console.error(`AI feedback request failed with status ${result.status}: ${errorText}`);
-        throw new Error(`API request failed with status ${result.status}`);
+        const problem = await result.json().catch(() => null);
+        throw new Error(problem?.error || `Feedback request failed (HTTP ${result.status}).`);
       }
 
       const data = await result.json();
@@ -543,7 +517,6 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
         console.error("Database feedback save failed:", insertError);
         throw new Error(`Database insert failed: ${insertError.message}`);
       }
-      await updateCareerReadiness(data.feedback);
     } catch (error) {
       console.error("Error in feedback generation:", error);
 
@@ -568,12 +541,7 @@ Focus on architecture, scalability, databases, caching, load balancing, distribu
             recommendation: "Review Required",
             recommendationMsg:
               "Manual review needed due to technical issues with feedback generation.",
-            rating: {
-              technicalSkills: 5,
-              communication: 5,
-              problemSolving: 5,
-              experience: 5,
-            },
+            rating: null,
             source: "fallback_generation_error",
           },
           error: error.message,

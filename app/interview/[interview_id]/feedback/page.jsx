@@ -2,7 +2,7 @@
 import { supabase } from "@/services/supabaseClient";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Star, CheckCircle, XCircle, ArrowLeft, Download } from "lucide-react";
 
 function Feedback() {
@@ -11,6 +11,52 @@ function Feedback() {
   const [feedbackData, setFeedbackData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const saveReview = useCallback(async (review) => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("PostInterview").update({ interview_review: review })
+        .eq("interview_id", interview_id).select("interview_id").single();
+      if (error) throw error;
+      setSaveError("");
+    } catch {
+      setSaveError("Your report is ready. Saving to interview history failed. Keep this page open and retry saving.");
+    } finally {
+      setSaving(false);
+    }
+  }, [interview_id]);
+  const autoStarted = useRef(null);
+  const retryReview = useCallback(async () => {
+    setRetrying(true); setRetryError("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Sign in again to retry.");
+      const conversation = feedbackData.interview_review.transcript;
+      const response = await fetch("/api/ai-feedback", { method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + data.session.access_token },
+        body: JSON.stringify({ conversation, interviewId: interview_id }) });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.feedback) {
+        throw new Error(payload?.error || `Feedback request failed (HTTP ${response.status}).`);
+      }
+      const review = { ...payload, transcript: conversation };
+      setFeedbackData({ ...feedbackData, interview_review: review });
+      await saveReview(review);
+    } catch (err) { setRetryError(err.message); }
+    finally { setRetrying(false); }
+  }, [feedbackData, interview_id, saveReview]);
+
+  useEffect(() => {
+    const review = feedbackData?.interview_review;
+    if (feedbackData?.interview_id !== interview_id || review?.feedback?.source !== "fallback_generation_error" ||
+        !review.transcript?.length || autoStarted.current === interview_id) return;
+    autoStarted.current = interview_id;
+    void retryReview();
+  }, [feedbackData, interview_id, retryReview]);
 
   const getFeedback = async () => {
     try {
@@ -136,6 +182,23 @@ function Feedback() {
   const feedback =
     feedbackData?.interview_review?.feedback || feedbackData?.interview_review;
 
+  if (feedback?.source?.startsWith("fallback_")) {
+    const canRetry = feedback.source === "fallback_generation_error" && feedbackData.interview_review.transcript?.length > 0;
+    return <main className="mx-auto max-w-xl space-y-4 p-8">
+      <h1 className="text-2xl font-bold">{canRetry ? "Interview recap" : "No candidate response to score"}</h1>
+      <p role="status">{canRetry ? (retrying ? "Generating your AI feedback from these saved answers…" : "Your answers are saved. AI ratings are currently unavailable.") : "No performance rating is available. Check microphone access before the next interview."}</p>
+      {canRetry && !retrying && !retryError && feedbackData.interview_review.error && <p className="text-sm text-slate-600">{feedbackData.interview_review.error}</p>}
+      {canRetry && Array.isArray(feedbackData.interview_review.transcript) && <details open>
+        <summary className="cursor-pointer underline">Read saved transcript</summary>
+        {feedbackData.interview_review.transcript.map((turn, i) => <p className="mt-2" key={i}>
+          <strong>{["user", "candidate"].includes(turn?.role) ? "Candidate" : "Interviewer"}</strong> · {turn?.content || turn?.text || turn?.transcript}
+        </p>)}
+      </details>}
+      {canRetry && <button disabled={retrying} onClick={retryReview} className="rounded-lg bg-indigo-700 px-4 py-2 text-white">{retrying ? "Generating…" : "Generate feedback again"}</button>}
+      {retryError && <p role="alert">{retryError}</p>}
+      <button onClick={() => router.push("/dashboard")} className="block underline">Return to dashboard</button>
+    </main>;
+  }
   if (!feedback) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4">
@@ -173,6 +236,12 @@ function Feedback() {
       </div>
 
       <div className="max-w-4xl mx-auto p-6">
+        {saveError && <div role="alert" className="mb-4 rounded-lg bg-amber-100 p-4 text-amber-950">
+          <p>{saveError}</p>
+          <button disabled={saving} onClick={() => saveReview(feedbackData.interview_review)} className="mt-2 underline">
+            {saving ? "Saving…" : "Retry saving report"}
+          </button>
+        </div>}
         {/* Overall Result */}
         <div className="bg-gray-800 rounded-xl p-6 mb-6 border border-gray-700">
           <div className="flex items-center justify-between">
@@ -191,19 +260,19 @@ function Feedback() {
                 </p>
               </div>
             </div>
-            <div className="text-center">
+            {feedback.recommendation && <div className="text-center">
               {getRecommendationIcon(feedback.recommendation)}
               <p
                 className={`text-xl font-bold mt-2 ${getRecommendationColor(feedback.recommendation)}`}
               >
                 {feedback.recommendation || "N/A"}
               </p>
-            </div>
+            </div>}
           </div>
         </div>
 
         {/* Ratings Section */}
-        <div className="bg-gray-800 rounded-xl p-6 mb-6 border border-gray-700">
+        {feedback.rating ? <div className="bg-gray-800 rounded-xl p-6 mb-6 border border-gray-700">
           <h3 className="text-xl font-bold mb-4">Performance Ratings</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {feedback.rating &&
@@ -221,17 +290,17 @@ function Feedback() {
                 </div>
               ))}
           </div>
-        </div>
+        </div> : <p className="mb-6">The AI provided written coaching. Numeric ratings are unavailable for this review.</p>}
 
         {/* Summary Section */}
         {/* Overall Score */}
-        <div className="bg-gray-800 rounded-xl p-6 mb-6 border border-gray-700">
+        {Number.isFinite(feedback.overallScore) && <div className="bg-gray-800 rounded-xl p-6 mb-6 border border-gray-700">
           <h3 className="text-xl font-bold mb-4">Overall Score</h3>
 
           <div className="text-5xl font-bold text-primary">
             {feedback.overallScore ?? "N/A"} / 100
           </div>
-        </div>
+        </div>}
 
         {/* Strengths */}
         <div className="bg-gray-800 rounded-xl p-6 mb-6 border border-gray-700">
@@ -276,7 +345,7 @@ function Feedback() {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-400">No weaknesses identified.</p>
+            <p className="text-gray-400">No weaknesses listed in this review.</p>
           )}
         </div>
 
@@ -295,14 +364,14 @@ function Feedback() {
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
           <h3 className="text-xl font-bold mb-4">Final Recommendation</h3>
           <div className="bg-gray-700 p-4 rounded-lg">
-            <div className="flex items-center mb-3">
+            {feedback.recommendation && <div className="flex items-center mb-3">
               {getRecommendationIcon(feedback.recommendation)}
               <span
                 className={`ml-3 text-lg font-bold ${getRecommendationColor(feedback.recommendation)}`}
               >
                 {feedback.recommendation || "N/A"}
               </span>
-            </div>
+            </div>}
             <p className="text-gray-200">
               {feedback.recommendationMsg ||
                 "No recommendation message available"}

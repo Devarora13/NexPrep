@@ -76,6 +76,7 @@ function ViewInterview() {
           const parsedFeedback = typeof feedbackData.interview_review === 'string' 
             ? JSON.parse(feedbackData.interview_review)
             : feedbackData.interview_review;
+          if (parsedFeedback?.feedback?.source?.startsWith("fallback_")) parsedFeedback.feedback.rating = null;
           setFeedback(parsedFeedback);
         } catch (parseError) {
           // Error parsing feedback
@@ -236,7 +237,7 @@ function ViewInterview() {
             </div>
           )}
 
-          {!feedback && (
+          {!feedback && interview.status === "pending" && (
             <div className="flex gap-4">
               <Button 
                 onClick={startInterview}
@@ -258,58 +259,59 @@ function ViewInterview() {
             <h3 className="text-xl font-semibold">Performance Summary</h3>
           </div>
           
+          {<button className="mb-4 text-indigo-700 underline" onClick={() => router.push(`/interview/${interviewId}/feedback`)}>{feedback.feedback.source?.startsWith("fallback_") ? "View feedback status" : "Open full feedback"}</button>}
           {/* Rating Scores */}
           {feedback.feedback.rating && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <div className="flex items-center justify-center mb-2">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(10)].map((_, i) => (
                     <Star 
                       key={i} 
                       className={`w-4 h-4 ${i < feedback.feedback.rating.technicalSkills ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
                     />
                   ))}
                 </div>
-                <div className="text-2xl font-bold text-blue-600">{feedback.feedback.rating.technicalSkills}/5</div>
+                <div className="text-2xl font-bold text-blue-600">{feedback.feedback.rating.technicalSkills}/10</div>
                 <div className="text-sm text-gray-600">Technical Skills</div>
               </div>
               
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <div className="flex items-center justify-center mb-2">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(10)].map((_, i) => (
                     <Star 
                       key={i} 
                       className={`w-4 h-4 ${i < feedback.feedback.rating.communication ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
                     />
                   ))}
                 </div>
-                <div className="text-2xl font-bold text-green-600">{feedback.feedback.rating.communication}/5</div>
+                <div className="text-2xl font-bold text-green-600">{feedback.feedback.rating.communication}/10</div>
                 <div className="text-sm text-gray-600">Communication</div>
               </div>
               
               <div className="text-center p-4 bg-purple-50 rounded-lg">
                 <div className="flex items-center justify-center mb-2">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(10)].map((_, i) => (
                     <Star 
                       key={i} 
                       className={`w-4 h-4 ${i < feedback.feedback.rating.problemSolving ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
                     />
                   ))}
                 </div>
-                <div className="text-2xl font-bold text-purple-600">{feedback.feedback.rating.problemSolving}/5</div>
+                <div className="text-2xl font-bold text-purple-600">{feedback.feedback.rating.problemSolving}/10</div>
                 <div className="text-sm text-gray-600">Problem Solving</div>
               </div>
               
               <div className="text-center p-4 bg-orange-50 rounded-lg">
                 <div className="flex items-center justify-center mb-2">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(10)].map((_, i) => (
                     <Star 
                       key={i} 
                       className={`w-4 h-4 ${i < feedback.feedback.rating.experience ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
                     />
                   ))}
                 </div>
-                <div className="text-2xl font-bold text-orange-600">{feedback.feedback.rating.experience}/5</div>
+                <div className="text-2xl font-bold text-orange-600">{feedback.feedback.rating.experience}/10</div>
                 <div className="text-sm text-gray-600">Experience</div>
               </div>
             </div>
@@ -347,8 +349,13 @@ function ViewInterview() {
         </div>
       )}
 
-      {/* Questions Section */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+      {feedback?.transcript?.length > 0 && <section className="mb-5 rounded-lg border bg-white p-6">
+        <h3 className="mb-4 text-xl font-semibold">Interview transcript</h3>
+        {feedback.transcript.filter(turn => turn?.content && ["assistant","user","bot","candidate"].includes(turn.role)).map((turn,i) =>
+          <p className="mb-3 text-sm" key={i}><strong>{["user","candidate"].includes(turn.role) ? "Candidate" : "Interviewer"}</strong> · {turn.content}</p>)}
+      </section>}
+      {/* Questions from older saved interviews */}
+      {questions.length > 0 && <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-5 h-5 text-gray-400" />
           <h3 className="text-xl font-semibold">Interview Questions ({questions.length})</h3>
@@ -395,10 +402,10 @@ function ViewInterview() {
             </div>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* Action Buttons */}
-      {!feedback && (
+      {!feedback && interview.status === "pending" && (
         <div className="mt-6 flex justify-center gap-4">
           <Button 
             onClick={startInterview}

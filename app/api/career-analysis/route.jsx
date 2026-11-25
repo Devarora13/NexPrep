@@ -8,6 +8,7 @@ function stripJsonFence(value) {
 }
 
 export async function POST(request) {
+  let fallback;
   try {
     const authorization = request.headers.get("authorization");
     const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -26,7 +27,8 @@ export async function POST(request) {
       return NextResponse.json({ error: "Paste at least a short resume or profile summary (80 characters)." }, { status: 400 });
     }
 
-    const fallback = createFallbackAnalysis({ resumeText, targetRole, jobDescription });
+    if (typeof targetRole !== "string" || typeof jobDescription !== "string") return NextResponse.json({ error: "Enter the role and job description as text." }, { status: 400 });
+    fallback = createFallbackAnalysis({ resumeText, targetRole, jobDescription });
     if (!process.env.OPENROUTER_API_KEY) return NextResponse.json({ analysis: fallback, source: "local" });
 
     const prompt = `You are VERITUS, a career-readiness analyst. Analyze the resume against the requested role and job description. Return JSON only, exactly in this format:
@@ -50,6 +52,7 @@ ${resumeText.slice(0, 14000)}
 --- RESUME END ---`;
     const response = await fetch(`${API_CONFIG.OPENROUTER.BASE_URL}/chat/completions`, {
       method: "POST",
+      signal: AbortSignal.timeout(20000),
       headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: API_CONFIG.OPENROUTER.DEFAULT_MODEL,
@@ -63,8 +66,9 @@ ${resumeText.slice(0, 14000)}
     const payload = await response.json();
     const parsed = JSON.parse(stripJsonFence(payload?.choices?.[0]?.message?.content || ""));
     if (!isCareerAnalysis(parsed)) return NextResponse.json({ analysis: fallback, source: "local" });
-    return NextResponse.json({ analysis: parsed, source: "ai" });
+    return NextResponse.json({ analysis: { ...fallback, priorityActions: parsed.priorityActions, roadmap: parsed.roadmap }, source: "ai" });
   } catch {
+    if (fallback) return NextResponse.json({ analysis: fallback, source: "local" });
     return NextResponse.json({ error: "We could not analyze this profile. Please try again." }, { status: 500 });
   }
 }

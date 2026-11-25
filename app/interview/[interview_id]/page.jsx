@@ -183,7 +183,9 @@ function Interview() {
 
                 <div className="flex items-center space-x-2">
                   <span className="font-medium text-sm">
-                    {interviewDetails.interview_type || "Technical"}
+                    {interviewDetails.interview_type === "System"
+                      ? "System Design"
+                      : interviewDetails.interview_type || "Technical"}
                   </span>
 
                   <div className="bg-purple-100 p-1.5 rounded-full">

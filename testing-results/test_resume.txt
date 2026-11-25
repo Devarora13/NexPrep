@@ -1,0 +1,23 @@
+Dev Arora
+Software Engineer & Full Stack Developer
+Email: dev.test@example.com | Location: New Delhi, India
+
+Summary:
+Passionate Software Engineer with hands-on experience in building modern web applications, scalable APIs, and applied AI systems. Proficient in React, Next.js, TypeScript, Node.js, and PostgreSQL.
+
+Core Skills:
+- Programming: JavaScript, TypeScript, Python, SQL, HTML, CSS
+- Frameworks & Libraries: React, Next.js, Tailwind CSS, Express
+- Databases & Cloud: PostgreSQL, Supabase, MongoDB, Git, Docker, REST APIs
+- Software Engineering: Data Structures, Algorithms, System Design
+
+Education:
+B.Tech in Computer Science and Technology (2023 - 2027)
+Maharaja Agrasen Institute of Technology (MAIT), CGPA: 8.8
+
+Projects:
+1. VERITUS - Career Intelligence & Mock Interview Platform (Next.js, Supabase, Vapi AI)
+   - Built an end-to-end placement readiness system with resume parsing and real-time voice interviews.
+   - Designed AI feedback pipeline achieving structured performance metrics.
+2. Cloud Task Manager (React, Node.js, PostgreSQL)
+   - Developed real-time collaborative task board with JWT auth and REST endpoints.

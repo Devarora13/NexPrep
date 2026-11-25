@@ -1,0 +1,317 @@
+[
+  {
+    "id": "BUILD-01",
+    "module": "Build & Static",
+    "scenario": "Package.json scripts inspection",
+    "preconditions": "package.json exists",
+    "steps": "Read package.json and inspect scripts field",
+    "expected": "All standard scripts (dev, build, start, lint, test) are declared",
+    "actual": "Scripts declared: dev, build, start, lint, lint:fix, type-check, clean, test",
+    "status": "PASS",
+    "details": {
+      "dev": "next dev",
+      "build": "next build",
+      "start": "next start",
+      "lint": "next lint",
+      "lint:fix": "next lint --fix",
+      "type-check": "tsc --noEmit",
+      "clean": "rm -rf .next",
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "timestamp": "2026-11-01T22:23:39.538Z"
+  },
+  {
+    "id": "BUILD-02",
+    "module": "Build & Static",
+    "scenario": "npm test script execution",
+    "preconditions": "package.json contains test script",
+    "steps": "Execute npm test in workspace",
+    "expected": "Automated test suite executes and passes",
+    "actual": "Script exited with code 1: \"Error: no test specified\"",
+    "status": "NOT IMPLEMENTED",
+    "details": "��\r\u0000\n\u0000>\u0000 \u0000n\u0000e\u0000x\u0000p\u0000r\u0000e\u0000p\u0000@\u00000\u0000.\u00001\u0000.\u00000\u0000 \u0000t\u0000e\u0000s\u0000t\u0000\r\u0000\n\u0000>\u0000 \u0000e\u0000c\u0000h\u0000o\u0000 \u0000\"\u0000E\u0000r\u0000r\u0000o\u0000r\u0000:\u0000 \u0000n\u0000o\u0000 \u0000t\u0000e\u0000s\u0000t\u0000 \u0000s\u0000p\u0000e\u0000c\u0000i\u0000f\u0000i\u0000e\u0000d\u0000\"\u0000 \u0000&\u0000&\u0000 \u0000e\u0000x\u0000i\u0000t\u0000 \u00001\u0000\r\u0000\n\u0000\r\u0000\n\u0000\"\u0000E\u0000r\u0000r\u0000o\u0000r\u0000:\u0000 \u0000n\u0000o\u0000 \u0000t\u0000e\u0000s\u0000t\u0000 \u0000s\u0000p\u0000e\u0000c\u0000i\u0000f\u0000i\u0000e\u0000d\u0000\"\u0000 \u0000\r\u0000\n\u0000",
+    "timestamp": "2026-11-01T22:23:39.540Z"
+  },
+  {
+    "id": "BUILD-03",
+    "module": "Build & Static",
+    "scenario": "npm run lint script execution",
+    "preconditions": "package.json contains lint script",
+    "steps": "Execute npm run lint in workspace",
+    "expected": "Linter parses codebase and reports zero errors",
+    "actual": "ESLint is not configured; interactive configuration prompt triggered",
+    "status": "PARTIAL",
+    "details": "Missing .eslintrc.json or eslint.config.mjs configuration",
+    "timestamp": "2026-11-01T22:23:39.541Z"
+  },
+  {
+    "id": "BUILD-04",
+    "module": "Build & Static",
+    "scenario": "npm run type-check script execution",
+    "preconditions": "package.json contains type-check script",
+    "steps": "Execute npm run type-check in workspace",
+    "expected": "TypeScript compiler checks types",
+    "actual": "Command failed: tsc is not installed in dependencies or devDependencies",
+    "status": "NOT IMPLEMENTED",
+    "details": "Project is JavaScript (JSX), typescript compiler is not in package.json",
+    "timestamp": "2026-11-01T22:23:39.542Z"
+  },
+  {
+    "id": "BUILD-05",
+    "module": "Build & Static",
+    "scenario": "npm run build execution in isolated environment",
+    "preconditions": "Next.js project configured",
+    "steps": "Execute npm run build in standard workspace",
+    "expected": "Production build generates .next bundle successfully",
+    "actual": "Build blocked by network font download (fonts.googleapis.com) and Windows sandbox EPERM directory lock",
+    "status": "BLOCKED",
+    "details": "s.googleapis.com] {\r\n  errno: -3008,\r\n  code: 'ENOTFOUND',\r\n  syscall: 'getaddrinfo',\r\n  hostname: 'fonts.googleapis.com'\r\n}\r\nFailed to compile.\r\n\r\nError: EPERM: operation not permitted, mkdir 'C:\\Users\\Dev Arora\\OneDrive\\Desktop\\Veritus\\.next\\types\\app'\r\n\r\n\r\n> Build failed because of webpack errors",
+    "timestamp": "2026-11-01T22:23:39.543Z"
+  },
+  {
+    "id": "PROF-02",
+    "module": "Career Profile",
+    "scenario": "Real PDF resume text extraction",
+    "preconditions": "Valid PDF binary buffer generated with exact XRef table",
+    "steps": "Pass buffer to pdf-parse library (isolated child process)",
+    "expected": "Extracts human-readable resume text including skills and experience",
+    "actual": "Extracted 105 characters successfully: \"Dev Arora - Full Stack Engineer specializing in React, Next.js, Node.js, TypeScript, PostgreSQL, and Git.\"",
+    "status": "PASS",
+    "details": "Dev Arora - Full Stack Engineer specializing in React, Next.js, Node.js, TypeScript, PostgreSQL, and Git.",
+    "timestamp": "2026-11-01T22:23:40.353Z"
+  },
+  {
+    "id": "PROF-03",
+    "module": "Career Profile",
+    "scenario": "Real DOCX resume text extraction",
+    "preconditions": "Valid DOCX binary buffer generated",
+    "steps": "Pass buffer to mammoth.extractRawText",
+    "expected": "Extracts raw text from word/document.xml",
+    "actual": "Extracted 138 characters successfully.",
+    "status": "PASS",
+    "details": "Dev Arora - Full Stack Engineer. Skills include React, Node.js, Next.js, TypeScript, SQL, Docker, Supabase, Git, System ",
+    "timestamp": "2026-11-01T22:23:40.372Z"
+  },
+  {
+    "id": "PROF-04",
+    "module": "Career Profile",
+    "scenario": "TXT resume text extraction",
+    "preconditions": "Valid UTF-8 text file",
+    "steps": "Read buffer as UTF-8 string",
+    "expected": "Extracts text cleanly",
+    "actual": "Extracted 1138 characters successfully.",
+    "status": "PASS",
+    "details": "Dev Arora\nSoftware Engineer & Full Stack Developer\nEmail: dev.test@example.com | Location: New Delhi",
+    "timestamp": "2026-11-01T22:23:40.373Z"
+  },
+  {
+    "id": "PROF-05",
+    "module": "Career Profile",
+    "scenario": "Unsupported file format validation (.png / image)",
+    "preconditions": "User uploads a .png file",
+    "steps": "Verify file extension against allowed whitelist (.pdf, .docx, .txt)",
+    "expected": "Rejects file with 400 status: \"Only PDF, DOCX, and TXT resumes are supported.\"",
+    "actual": "Correctly rejected by extension whitelist guard",
+    "status": "PASS",
+    "details": null,
+    "timestamp": "2026-11-01T22:23:40.373Z"
+  },
+  {
+    "id": "PROF-06",
+    "module": "Career Profile",
+    "scenario": "File-size validation (> 5 MB limit)",
+    "preconditions": "Oversized file (6.29 MB)",
+    "steps": "Check file.size > MAX_FILE_SIZE (5 * 1024 * 1024 bytes)",
+    "expected": "Rejects file with 400 status: \"Resume files must be between 1 byte and 5 MB.\"",
+    "actual": "File size 6291456 bytes correctly caught by 5 MB size limit guard",
+    "status": "PASS",
+    "details": null,
+    "timestamp": "2026-11-01T22:23:40.376Z"
+  },
+  {
+    "id": "PROF-07",
+    "module": "Career Profile",
+    "scenario": "Extracted text minimum character threshold (< 80 chars)",
+    "preconditions": "File containing only 9 characters",
+    "steps": "Validate resumeText.length < 80",
+    "expected": "Rejects with 422: \"We could not extract enough text from this file.\"",
+    "actual": "Correctly caught by character length validation guard",
+    "status": "PASS",
+    "details": null,
+    "timestamp": "2026-11-01T22:23:40.376Z"
+  },
+  {
+    "id": "PROF-09",
+    "module": "Career Profile",
+    "scenario": "Deterministic local career analysis fallback",
+    "preconditions": "Target role, job description, and resume text provided",
+    "steps": "Execute createFallbackAnalysis and validate schema with isCareerAnalysis",
+    "expected": "Returns structured analysis with detectedSkills, matchedSkills, skillGaps, roadmap, and readinessScore",
+    "actual": "Valid schema generated. Overall: 61, Detected: [javascript, react, next.js, node.js, java, sql, api, rest], Gaps: [typescript, tailwind]",
+    "status": "PASS",
+    "details": {
+      "overall": 61,
+      "gaps": [
+        "typescript",
+        "tailwind"
+      ],
+      "actions": [
+        "Build or revise one project that demonstrates typescript.",
+        "Practice a role-specific AI mock interview and review the feedback.",
+        "Update the resume with measurable impact, technologies, and ownership."
+      ]
+    },
+    "timestamp": "2026-11-01T22:23:40.382Z"
+  },
+  {
+    "id": "SCORE-01",
+    "module": "Readiness Scoring",
+    "scenario": "Symmetrical scoring order independence",
+    "preconditions": "Candidate completes both Assessment (80/100) and Mock Interview (75/100)",
+    "steps": "Calculate Score A (Assessment then Interview) vs Score B (Interview then Assessment)",
+    "expected": "Both execution orders produce identical overall composite score",
+    "actual": "Order-independent: Overall = 70/100 in both paths",
+    "status": "PASS",
+    "details": {
+      "pathA": {
+        "overall": 70,
+        "resume": 38,
+        "skillMatch": 80,
+        "interview": 75,
+        "assessment": 80
+      },
+      "pathB": {
+        "overall": 70,
+        "resume": 38,
+        "skillMatch": 80,
+        "interview": 75,
+        "assessment": 80
+      }
+    },
+    "timestamp": "2026-11-01T22:23:40.382Z"
+  },
+  {
+    "id": "SCORE-02",
+    "module": "Readiness Scoring",
+    "scenario": "Score boundary clamping (0 - 100 range)",
+    "preconditions": "Out-of-bound inputs: 150 and -20",
+    "steps": "Pass 150 and -20 into scoring functions",
+    "expected": "Scores clamped strictly between 0 and 100",
+    "actual": "Successfully clamped 150 -> 100 and -20 -> 0",
+    "status": "PASS",
+    "details": null,
+    "timestamp": "2026-11-01T22:23:40.382Z"
+  },
+  {
+    "id": "ASMT-01",
+    "module": "Technical Assessment",
+    "scenario": "Assessment question bank integrity and schema",
+    "preconditions": "lib/assessment.js module loaded",
+    "steps": "Validate each question has ID, question string, options array, correct answer in options, and category",
+    "expected": "5 well-formed technical questions covering core engineering domains",
+    "actual": "5 questions verified across categories: Frontend fundamentals, APIs, Data structures, Developer workflow, Databases",
+    "status": "PASS",
+    "details": null,
+    "timestamp": "2026-11-01T22:23:40.385Z"
+  },
+  {
+    "id": "ASMT-03",
+    "module": "Technical Assessment",
+    "scenario": "Score calculation accuracy (0% and 100% bounds)",
+    "preconditions": "5 questions in quiz",
+    "steps": "Evaluate scoring function with all correct vs all incorrect answers",
+    "expected": "100% for 5/5 correct, 0% for 0/5 correct",
+    "actual": "Scoring accurately computes 100% (5/5) and 0% (0/5)",
+    "status": "PASS",
+    "details": null,
+    "timestamp": "2026-11-01T22:23:40.385Z"
+  },
+  {
+    "id": "VAULT-01",
+    "module": "Practice Vault",
+    "scenario": "Curated resource links integrity audit",
+    "preconditions": "app/(main)/dashboard/practice/page.jsx loaded",
+    "steps": "Scan all resource entries and evaluate URLs",
+    "expected": "All curated resources have valid external URLs",
+    "actual": "Found 27 total resources: 10 live external URLs, 17 placeholder '#' links.",
+    "status": "PARTIAL",
+    "details": {
+      "total": 27,
+      "live": 10,
+      "placeholders": 17
+    },
+    "timestamp": "2026-11-01T22:23:40.386Z"
+  },
+  {
+    "id": "BILL-01",
+    "module": "Billing & Payments",
+    "scenario": "Payment gateway integration status",
+    "preconditions": "Billing page loaded",
+    "steps": "Inspect payment trigger handler for external payment gateway",
+    "expected": "Live payment processor (Razorpay/Stripe) integration",
+    "actual": "Simulated credit purchase (UI mockup with setTimeout and alert)",
+    "status": "NOT IMPLEMENTED",
+    "details": "Credit packs display prices in INR, but checkout handler executes client-side simulation only (per Synopsis Section 4.2: Planned Scope)",
+    "timestamp": "2026-11-01T22:23:40.387Z"
+  },
+  {
+    "id": "SETT-01",
+    "module": "Settings",
+    "scenario": "User preferences database persistence",
+    "preconditions": "Settings page loaded",
+    "steps": "Inspect settings save handler for Supabase persistence",
+    "expected": "Preferences (notifications, theme, voice) saved to database table",
+    "actual": "Settings state stored only in React local state (no Supabase table)",
+    "status": "PARTIAL",
+    "details": "UI allows toggling notifications, but settings are not persisted to a database table on reload",
+    "timestamp": "2026-11-01T22:23:40.387Z"
+  },
+  {
+    "id": "VOICE-01",
+    "module": "Live AI Interview",
+    "scenario": "Vapi Web SDK initialization and configuration",
+    "preconditions": "start/page.jsx loaded",
+    "steps": "Check Vapi instantiation and event listeners",
+    "expected": "Vapi client initialized with public key, listeners for call-start, call-end, and error",
+    "actual": "Vapi properly instantiated with call-start, call-end, error listeners",
+    "status": "PASS",
+    "details": null,
+    "timestamp": "2026-11-01T22:23:40.388Z"
+  },
+  {
+    "id": "VOICE-02",
+    "module": "Live AI Interview",
+    "scenario": "Adaptive system prompt injection from Career Profile",
+    "preconditions": "Candidate has target role, skills, and gaps in Career Profile",
+    "steps": "Inspect assistantOptions.model.messages system prompt definition",
+    "expected": "Dynamically injects verified skills, priority skill gaps, and roadmap focus into prompt",
+    "actual": "System prompt successfully injects target role, verified skills, priority gaps, and dynamic conversational rules",
+    "status": "PASS",
+    "details": "Senior interviewer persona, dynamic follow-ups, challenge weak reasoning, no fixed list",
+    "timestamp": "2026-11-01T22:23:40.388Z"
+  },
+  {
+    "id": "FDBK-01",
+    "module": "AI Feedback",
+    "scenario": "Feedback API security, authorization and rubric validation",
+    "preconditions": "app/api/ai-feedback/route.jsx loaded",
+    "steps": "Inspect auth check, user interview ownership validation, and JSON rubric schema",
+    "expected": "Requires Bearer JWT, validates interview ownership, validates 5 rating categories and overall score",
+    "actual": "All security guards present: Bearer auth (401), interview ownership verification (403), strict rubric validator (502 on invalid schema)",
+    "status": "PASS",
+    "details": null,
+    "timestamp": "2026-11-01T22:23:40.388Z"
+  },
+  {
+    "id": "SEC-01",
+    "module": "Security & Secrets",
+    "scenario": "Private API key exposure check in client-side code",
+    "preconditions": "Client-side components marked with \"use client\"",
+    "steps": "Scan all client components for references to OPENROUTER_API_KEY or private secrets",
+    "expected": "No private API keys accessed directly in client components",
+    "actual": "Clean: OPENROUTER_API_KEY is isolated strictly to server-side API routes",
+    "status": "PASS",
+    "details": null,
+    "timestamp": "2026-11-01T22:23:40.415Z"
+  }
+]

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Code, 
   Brain, 
@@ -8,27 +8,32 @@ import {
   Wrench, 
   ExternalLink, 
   Star, 
-  Download, 
-  Clock,
   Users,
-  TrendingUp,
   BookOpen,
   Video,
   Github,
-  Bookmark,
   Target,
   Award,
-  Calendar,
-  DollarSign,
-  Lightbulb,
-  MessageSquare,
   ChevronRight,
   Search,
   Filter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+import Link from 'next/link';
+import { lessons } from '@/lib/practice-catalog';
+
+const studyPaths = [
+  { skills: ["javascript","typescript","html","css","react","next.js","tailwind","figma"], path: "Frontend Developer Roadmap", task: "Build an accessible project list with a search field. Explain one design decision and demonstrate how you tested it." },
+  { skills: ["sql","postgresql","mongodb","supabase","api","rest","node.js","python","java","c#"], path: "Backend Developer Roadmap", task: "Implement a searchable list of job openings. Describe the data model and test the empty-result case." },
+  { skills: ["aws","docker","kubernetes","git"], path: "DevOps Engineer Roadmap", task: "Package a small service, document how it starts, and demonstrate a repeatable deployment or rollback." },
+  { skills: ["data structures","algorithms","c++"], path: "Coding and aptitude practice", task: "Solve a sequence problem, test a boundary case, and explain the running time." },
+  { skills: ["system design"], path:"System Design Primer", task:"Sketch an interview scheduling service. Explain one failure mode and how the system recovers." },
+];
+
 function PracticeResources() {
+  const [focus, setFocus] = useState("");
+  useEffect(() => setFocus(new URLSearchParams(window.location.search).get("skill") || ""), []);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -76,7 +81,7 @@ function PracticeResources() {
     {
       title: "Neetcode 150",
       description: "150 essential coding interview problems with video solutions",
-      url: "https://neetcode.io/practice",
+      url: "https://neetcode.io/practice/practice/neetcode150",
       type: "free",
       difficulty: "intermediate",
       tags: ["Video Solutions", "Curated", "Patterns"],
@@ -95,100 +100,14 @@ function PracticeResources() {
     }
   ];
 
-  const behavioralResources = [
-    {
-      title: "STAR Method Mastery Guide",
-      description: "Complete framework for answering behavioral questions effectively",
-      url: "#",
-      type: "premium",
-      difficulty: "beginner",
-      tags: ["Framework", "Structure", "Examples"],
-      icon: Star,
-      category: 'behavioral'
-    },
-    {
-      title: "50 Most Common HR Questions",
-      description: "Comprehensive list with sample answers and tips",
-      url: "#",
-      type: "free",
-      difficulty: "all-levels",
-      tags: ["HR Questions", "Sample Answers", "Tips"],
-      icon: MessageSquare,
-      category: 'behavioral'
-    },
-    {
-      title: "Amazon Leadership Principles",
-      description: "Deep dive into Amazon's 16 leadership principles with examples",
-      url: "https://www.amazon.jobs/content/en/our-workplace/leadership-principles",
-      type: "free",
-      difficulty: "intermediate",
-      tags: ["Amazon", "Leadership", "Principles"],
-      icon: Users,
-      category: 'behavioral'
-    },
-    {
-      title: "Google's Project Oxygen",
-      description: "What makes a great manager - behavioral insights from Google",
-      url: "#",
-      type: "free",
-      difficulty: "advanced",
-      tags: ["Google", "Management", "Research"],
-      icon: Lightbulb,
-      category: 'behavioral'
-    }
-  ];
-
-  const resumeResources = [
-    {
-      title: "ATS-Friendly Resume Template",
-      description: "Google Docs template optimized for Applicant Tracking Systems",
-      url: "#",
-      type: "free",
-      difficulty: "beginner",
-      tags: ["ATS", "Template", "Google Docs"],
-      icon: FileText,
-      category: 'resume'
-    },
-    {
-      title: "Tech Resume Checklist",
-      description: "20-point checklist to make your tech resume stand out",
-      url: "#",
-      type: "free",
-      difficulty: "all-levels",
-      tags: ["Checklist", "Optimization", "Tech"],
-      icon: Target,
-      category: 'resume'
-    },
-    {
-      title: "Portfolio Website Builder",
-      description: "Step-by-step guide to building an impressive developer portfolio",
-      url: "#",
-      type: "premium",
-      difficulty: "intermediate",
-      tags: ["Portfolio", "Website", "Guide"],
-      icon: Code,
-      category: 'resume'
-    },
-    {
-      title: "LinkedIn Profile Optimizer",
-      description: "Complete guide to creating a compelling LinkedIn profile",
-      url: "#",
-      type: "free",
-      difficulty: "beginner",
-      tags: ["LinkedIn", "Profile", "Networking"],
-      icon: Users,
-      category: 'resume'
-    }
-  ];
-
   const roadmapResources = [
     {
-      title: "Frontend Developer Roadmap 2024",
+      title: "Frontend Developer Roadmap",
       description: "Complete learning path from beginner to senior frontend developer",
       url: "https://roadmap.sh/frontend",
       type: "free",
       difficulty: "all-levels",
-      tags: ["Frontend", "Roadmap", "2024"],
+      tags: ["Frontend", "Roadmap"],
       icon: Code,
       category: 'roadmaps'
     },
@@ -224,122 +143,23 @@ function PracticeResources() {
     }
   ];
 
-  const nonTechResources = [
-    {
-      title: "Product Manager Interview Guide",
-      description: "Comprehensive guide for PM interviews at top tech companies",
-      url: "#",
-      type: "premium",
-      difficulty: "intermediate",
-      tags: ["Product Management", "Strategy", "Frameworks"],
-      icon: TrendingUp,
-      category: 'non-tech'
-    },
-    {
-      title: "UX/UI Designer Portfolio Guide",
-      description: "How to create a compelling design portfolio that gets interviews",
-      url: "#",
-      type: "free",
-      difficulty: "all-levels",
-      tags: ["UX", "UI", "Portfolio", "Design"],
-      icon: FileText,
-      category: 'non-tech'
-    },
-    {
-      title: "Sales Interview Preparation",
-      description: "Master sales methodologies and common interview scenarios",
-      url: "#",
-      type: "free",
-      difficulty: "beginner",
-      tags: ["Sales", "Methodologies", "Scenarios"],
-      icon: TrendingUp,
-      category: 'non-tech'
-    },
-    {
-      title: "Marketing Case Study Framework",
-      description: "Approach marketing case studies like a consultant",
-      url: "#",
-      type: "premium",
-      difficulty: "intermediate",
-      tags: ["Marketing", "Case Studies", "Framework"],
-      icon: Target,
-      category: 'non-tech'
-    },
-    {
-      title: "Consulting Interview Prep",
-      description: "Master case interviews for McKinsey, BCG, and Bain",
-      url: "#",
-      type: "premium",
-      difficulty: "advanced",
-      tags: ["Consulting", "Case Studies", "MBB"],
-      icon: Brain,
-      category: 'non-tech'
-    },
-    {
-      title: "Finance Interview Questions",
-      description: "Technical and behavioral questions for finance roles",
-      url: "#",
-      type: "free",
-      difficulty: "intermediate",
-      tags: ["Finance", "Technical", "Behavioral"],
-      icon: DollarSign,
-      category: 'non-tech'
-    }
-  ];
-
-  const bonusTools = [
-    {
-      title: "Resume Analyzer",
-      description: "AI-powered tool to optimize your resume for ATS systems",
-      url: "#",
-      type: "coming-soon",
-      difficulty: "all-levels",
-      tags: ["AI", "ATS", "Analysis"],
-      icon: FileText,
-      category: 'tools',
-      comingSoon: true
-    },
-    {
-      title: "Mock Interview Scheduler",
-      description: "Schedule practice interviews with industry professionals",
-      url: "#",
-      type: "premium",
-      difficulty: "all-levels",
-      tags: ["Mock Interviews", "Scheduling", "Practice"],
-      icon: Calendar,
-      category: 'tools'
-    },
-    {
-      title: "Salary Comparison Tool",
-      description: "Compare salaries across companies and locations",
-      url: "#",
-      type: "free",
-      difficulty: "all-levels",
-      tags: ["Salary", "Comparison", "Market Data"],
-      icon: DollarSign,
-      category: 'tools'
-    },
-    {
-      title: "Interview Progress Tracker",
-      description: "Track your interview preparation progress and weak areas",
-      url: "#",
-      type: "free",
-      difficulty: "all-levels",
-      tags: ["Progress", "Tracking", "Analytics"],
-      icon: TrendingUp,
-      category: 'tools'
-    }
-  ];
-
+  const lessonResources = lessons.map(lesson => ({
+    title: lesson.title, description: lesson.steps[0], url: "/dashboard/assessment?activity=" + lesson.id,
+    category: lesson.category.toLowerCase(), icon: { star: Star, resume: FileText, testing: Code }[lesson.id],
+    type: 'free', difficulty: 'beginner', tags: [lesson.category, 'Learning check'],
+  }));
   const allResources = [
-    ...codingResources,
-    ...behavioralResources,
-    ...resumeResources,
-    ...roadmapResources,
-    ...nonTechResources,
-    ...bonusTools
+    ...codingResources, ...lessonResources, ...roadmapResources,
+    { title: "Amazon Leadership Principles", description: "Explore the principles Amazon uses to discuss decisions, teamwork and leadership.",
+      url: "https://www.amazon.jobs/content/en/our-workplace/leadership-principles", category: 'non-tech', icon: Users,
+      type: 'free', difficulty: 'all-levels', tags: ['Amazon', 'Leadership', 'Behavioral'] },
+    { title: "Coding and aptitude practice", description: "Submit JavaScript solutions or complete a reasoning set and save your score.",
+      url: "/dashboard/assessment", category: 'tools', icon: Wrench, type: 'free', difficulty: 'all-levels', tags: ['Coding', 'Aptitude', 'Assessment'] },
+    { title: "Advanced interview case", description: "Use one earned credit for a system-design scenario and a self-review rubric.",
+      url: "/billing", category: 'behavioral', icon: Brain, type: 'premium', difficulty: 'advanced', tags: ['System Design', 'Practice'] },
   ];
-
+  const focusPath = studyPaths.find(entry => entry.skills.includes(focus));
+  const recommended = allResources.find(item => item.title === focusPath?.path);
   const filteredResources = allResources.filter(resource => {
     const matchesFilter = activeFilter === 'all' || resource.category === activeFilter;
     const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -372,15 +192,10 @@ function PracticeResources() {
                 {resource.type === 'freemium' && (
                   <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">Freemium</span>
                 )}
-                {resource.comingSoon && (
-                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">Coming Soon</span>
-                )}
               </div>
             </div>
           </div>
-          {!resource.comingSoon && (
-            <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
-          )}
+          <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
         </div>
         
         <p className="text-gray-600 mb-4 text-sm leading-relaxed">
@@ -402,20 +217,13 @@ function PracticeResources() {
           <span className="text-xs text-gray-500 capitalize">
             {resource.difficulty.replace('-', ' ')}
           </span>
-          {resource.comingSoon ? (
-            <Button disabled variant="outline" size="sm">
-              Coming Soon
-            </Button>
-          ) : (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open(resource.url, '_blank')}
-              className="group-hover:bg-blue-50 group-hover:border-blue-300"
-            >
-              Access <ChevronRight className="w-3 h-3 ml-1" />
-            </Button>
-          )}
+          <Button asChild variant="outline" size="sm" className="group-hover:bg-blue-50 group-hover:border-blue-300">
+            {resource.url.startsWith('/') ? (
+              <Link href={resource.url}>Access <ChevronRight className="w-3 h-3 ml-1" /></Link>
+            ) : (
+              <a href={resource.url} target="_blank" rel="noopener noreferrer">Access <ChevronRight className="w-3 h-3 ml-1" /></a>
+            )}
+          </Button>
         </div>
       </div>
     );
@@ -437,7 +245,7 @@ function PracticeResources() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
         <div className="text-center p-6 bg-blue-50 rounded-lg">
-          <div className="text-2xl font-bold text-blue-600">{allResources.length}+</div>
+          <div className="text-2xl font-bold text-blue-600">{allResources.length}</div>
           <div className="text-sm text-blue-700">Total Resources</div>
         </div>
         <div className="text-center p-6 bg-green-50 rounded-lg">
@@ -447,14 +255,19 @@ function PracticeResources() {
           <div className="text-sm text-green-700">Free Resources</div>
         </div>
         <div className="text-center p-6 bg-purple-50 rounded-lg">
-          <div className="text-2xl font-bold text-purple-600">6</div>
+          <div className="text-2xl font-bold text-purple-600">{resourceCategories.length - 1}</div>
           <div className="text-sm text-purple-700">Categories</div>
         </div>
         <div className="text-center p-6 bg-orange-50 rounded-lg">
-          <div className="text-2xl font-bold text-orange-600">Weekly</div>
-          <div className="text-sm text-orange-700">Updates</div>
+          <div className="text-2xl font-bold text-orange-600">{lessons.length}</div>
+          <div className="text-sm text-orange-700">Learning Checks</div>
         </div>
       </div>
+
+    {focus && <aside className="mb-8 rounded-xl bg-indigo-50 p-4"><h2 className="font-bold">Practice focus · {focus}</h2>
+      <p>{focusPath?.task || "Build a small example using " + focus + ", record the result and explain your contribution."}</p>
+      {recommended && <a className="mr-4 underline" href={recommended.url}>Study · {recommended.title}</a>}
+      <Link href="/dashboard/create-interview" className="underline">Practice explaining the example</Link></aside>}
 
       {/* Search and Filter */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -462,6 +275,7 @@ function PracticeResources() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
+            aria-label="Search resources"
             placeholder="Search resources..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -470,7 +284,7 @@ function PracticeResources() {
         </div>
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-gray-400" />
-          <select
+          <select aria-label="Filter by category"
             value={activeFilter}
             onChange={(e) => setActiveFilter(e.target.value)}
             className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -508,8 +322,8 @@ function PracticeResources() {
       {/* Resources Grid */}
       {filteredResources.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredResources.map((resource, index) => (
-            <ResourceCard key={index} resource={resource} />
+          {filteredResources.map((resource) => (
+            <ResourceCard key={resource.title} resource={resource} />
           ))}
         </div>
       ) : (
@@ -529,11 +343,11 @@ function PracticeResources() {
           Use these resources alongside VERITUS's AI-powered mock interviews to maximize your chances of success.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button className="bg-white text-blue-600 hover:bg-blue-50">
-            Start Practice Interview
+          <Button asChild className="bg-white text-blue-600 hover:bg-blue-50">
+            <Link href="/dashboard/create-interview">Start Practice Interview</Link>
           </Button>
-          <Button variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
-            Generate Questions
+          <Button asChild variant="outline" className="border-white bg-transparent text-white hover:bg-white hover:text-blue-600">
+            <Link href="/dashboard/assessment">Open Assessment</Link>
           </Button>
         </div>
       </div>

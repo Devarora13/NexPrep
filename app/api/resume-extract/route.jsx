@@ -29,14 +29,15 @@ export async function POST(request) {
     if (file.size === 0 || file.size > MAX_FILE_SIZE) return NextResponse.json({ error: "Resume files must be between 1 byte and 5 MB." }, { status: 400 });
 
     const name = file.name.toLowerCase();
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const bytes = await file.arrayBuffer();
     let text = "";
     if (name.endsWith(".pdf")) {
-      text = (await pdfParse(buffer)).text;
+      // PDF.js expects typed-array slice semantics. Node Buffer.slice returns a view.
+      text = (await pdfParse(new Uint8Array(bytes))).text;
     } else if (name.endsWith(".docx")) {
-      text = (await mammoth.extractRawText({ buffer })).value;
+      text = (await mammoth.extractRawText({ buffer: Buffer.from(bytes) })).value;
     } else if (name.endsWith(".txt")) {
-      text = buffer.toString("utf8");
+      text = new TextDecoder().decode(bytes);
     } else {
       return NextResponse.json({ error: "Only PDF, DOCX, and TXT resumes are supported." }, { status: 400 });
     }

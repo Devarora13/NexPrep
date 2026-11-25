@@ -101,7 +101,7 @@ function CreateInterview() {
         {
           duration: 5000,
           action: {
-            label: "Add Credits",
+            label: "Earn credits",
             onClick: () => router.push("/billing"),
           },
         },
@@ -157,7 +157,10 @@ function CreateInterview() {
         p_interview_time: extractDurationMinutes(
           submissionData.interviewDuration,
         ),
-        p_interview_type: submissionData.interviewType,
+        p_interview_type:
+          submissionData.interviewType === "System Design"
+            ? "System"
+            : submissionData.interviewType,
         p_difficulty_level: submissionData.difficultyLevel,
       });
 
@@ -167,6 +170,8 @@ function CreateInterview() {
         return;
       }
 
+      const { data: balance } = await supabase.from("Users").select("credits").eq("email", user.user.email).maybeSingle();
+      if (balance) user.setUser(current => current ? { ...current, credits: balance.credits } : current);
       toast.success("Interview created successfully!");
 
       // Close modal
@@ -219,7 +224,7 @@ function CreateInterview() {
                 onClick={() => router.push("/billing")}
                 className="text-xs bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
               >
-                Add Credits
+                Earn credits
               </button>
             )}
           </div>

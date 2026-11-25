@@ -74,8 +74,8 @@ function AllInterviews() {
 
           return {
             ...interview,
-            feedback: parsedFeedback,
-            status: parsedFeedback ? 'completed' : 'pending'
+            feedback: parsedFeedback?.feedback?.source?.startsWith("fallback_") ? null : parsedFeedback,
+            status: interview.status || (parsedFeedback ? 'completed' : 'pending')
           };
         })
       );
@@ -108,14 +108,13 @@ function AllInterviews() {
       ratings.communication,
       ratings.problemSolving,
       ratings.experience
-    ].filter(score => score !== undefined);
+    ].filter(Number.isFinite);
     
     if (scores.length === 0) return null;
     
     const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
     
-    // Convert from 10-point scale to 5-point scale if needed
-    const normalizedScore = average > 5 ? (average / 2) : average;
+    const normalizedScore = average / 2;
     
     // Ensure the score doesn't exceed 5
     return Math.min(normalizedScore, 5).toFixed(1);
@@ -139,8 +138,8 @@ function AllInterviews() {
   // Filter and sort interviews
   const filteredAndSortedInterviews = interviews
     .filter(interview => {
-      const matchesSearch = interview.job_position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           interview.job_description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = (interview.job_position || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (interview.job_description || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesFilter = filterStatus === 'all' || interview.status === filterStatus;
       
@@ -233,7 +232,7 @@ function AllInterviews() {
               <p className="text-sm text-gray-500">Avg Score</p>
               <p className="text-2xl font-bold text-gray-900">
                 {(() => {
-                  const completedInterviews = interviews.filter(i => i.feedback);
+                  const completedInterviews = interviews.filter(i => getAverageScore(i.feedback) !== null);
                   if (completedInterviews.length === 0) return 'N/A';
                   
                   const avgScore = completedInterviews
@@ -274,6 +273,8 @@ function AllInterviews() {
             >
               <option value="all">All Status</option>
               <option value="completed">Completed</option>
+              <option value="in_progress">In progress</option>
+              <option value="expired">Expired</option>
               <option value="pending">Pending</option>
             </select>
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -338,7 +339,7 @@ function AllInterviews() {
                             ? 'bg-green-100 text-green-800 border-green-200' 
                             : 'bg-yellow-100 text-yellow-800 border-yellow-200'
                         }`}>
-                          {interview.status === 'completed' ? 'Completed' : 'Pending'}
+                          {interview.status.replace('_', ' ')}
                         </div>
                       </div>
 
@@ -365,7 +366,7 @@ function AllInterviews() {
                             <div className="flex items-center">
                               <Star className="w-4 h-4 text-yellow-500 mr-1" />
                               <span className="text-sm font-medium">
-                                {getAverageScore(interview.feedback)}/5
+                                {getAverageScore(interview.feedback) === null ? "Written feedback" : getAverageScore(interview.feedback) + "/5"}
                               </span>
                             </div>
 
