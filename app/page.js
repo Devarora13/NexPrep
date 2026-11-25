@@ -545,7 +545,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
+{/* // Gagan Dev Vansh */}
       {/* ================= JOURNEY ================= */}
       <section
         id="journey"
