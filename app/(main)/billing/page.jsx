@@ -30,8 +30,8 @@ function Billing() {
       originalPrice: 399,
       bestFor: 'Serious interview rounds',
       icon: <Target className="w-6 h-6" />,
-      color: 'bg-green-50 border-green-200 text-green-700',
-      buttonColor: 'bg-green-600 hover:bg-green-700',
+      color: 'bg-green-50 border-green-200 text-green-600',
+      buttonColor: 'bg-green-600 hover:bg-green-600',
       popular: true
     },
     {
