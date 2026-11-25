@@ -6,21 +6,28 @@ import { ArrowRight, Brain, ClipboardCheck } from "lucide-react";
 import { supabase } from "@/services/supabaseClient";
 import { useUser } from "@/app/provider";
 
+import { loadProgress, profileScore } from "@/lib/preparation-progress";
+import { findPractice } from "@/lib/practice-catalog";
+
 export default function CareerReadinessCard() {
   const { user } = useUser();
   const [profile, setProfile] = useState(null);
 
+  const [progress, setProgress] = useState(null);
+  const [error, setError] = useState("");
   useEffect(() => {
     if (!user?.email) return;
-    supabase
-      .from("CareerProfiles")
-      .select("target_role, analysis")
-      .eq("user_email", user.email)
-      .maybeSingle()
-      .then(({ data }) => setProfile(data || null));
+    let active = true;
+    Promise.all([supabase.from("CareerProfiles").select("target_role, analysis").eq("user_email", user.email).maybeSingle(), loadProgress(supabase, user.email)])
+      .then(([saved, activity]) => {
+        if (saved.error) throw saved.error;
+        if (active) { setProfile(saved.data); setProgress(activity); setError(""); }
+      }).catch(() => { if (active) setError("Unable to load preparation history."); });
+    return () => { active = false; };
   }, [user?.email]);
 
-  const score = profile?.analysis?.readinessScore?.overall;
+  const readiness = profileScore(profile?.analysis, progress);
+  const score = readiness.overall;
   return (
     <section className="mb-6 rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -34,12 +41,12 @@ export default function CareerReadinessCard() {
             </p>
             <h2 className="text-lg font-bold text-gray-900">
               {typeof score === "number"
-                ? `${score}/100 readiness for ${profile.target_role}`
+                ? `${score}/100 readiness${profile?.target_role ? " for " + profile.target_role : ""}`
                 : "Create your career-readiness profile"}
             </h2>
             <p className="text-sm text-gray-500">
               {typeof score === "number"
-                ? "Review your gaps and continue with a tailored interview."
+                ? `Evidence covers ${readiness.coverage}% of the weighted score.`
                 : "Get your skill-gap analysis and personalized roadmap."}
             </p>
           </div>
@@ -60,6 +67,13 @@ export default function CareerReadinessCard() {
           </Link>
         </div>
       </div>
+      {error && <p role="alert" className="mt-3 text-red-700">{error}</p>}
+      {progress?.recent?.length > 0 && <div className="mt-4 border-t pt-3">
+        <h3 className="font-semibold">Recent practice</h3>
+        {progress.recent.map((row,i) => <div key={i} className="mt-2 flex justify-between gap-2 text-sm">
+          <span>{findPractice(row.assessment_type)?.title || row.assessment_type}</span>
+          <span>{row.score}/100 · {new Date(row.created_at).toLocaleDateString()}</span>
+        </div>)}</div>}
     </section>
   );
 }

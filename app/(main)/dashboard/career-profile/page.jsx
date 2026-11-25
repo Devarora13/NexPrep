@@ -14,6 +14,10 @@ import { toast } from "sonner";
 import { supabase } from "@/services/supabaseClient";
 import { useUser } from "@/app/provider";
 
+import Link from "next/link";
+import { loadProgress, profileScore } from "@/lib/preparation-progress";
+import { scoreWeights } from "@/lib/career-readiness";
+
 function ScoreRing({ score }) {
   return (
     <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-violet-500 p-2 shadow-lg">
@@ -25,12 +29,10 @@ function ScoreRing({ score }) {
   );
 }
 
-function AnalysisResults({ analysis, source }) {
+function AnalysisResults({ analysis, source, progress, onApply }) {
   if (!analysis) return null;
-  const score = Math.max(
-    0,
-    Math.min(100, Math.round(analysis?.readinessScore?.overall || 0)),
-  );
+  const readiness = profileScore(analysis, progress);
+  const score = readiness.overall ?? "—";
   const skills = analysis.detectedSkills?.length
     ? analysis.detectedSkills
     : ["No skills detected yet"];
@@ -55,23 +57,32 @@ function AnalysisResults({ analysis, source }) {
           </div>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {[
-            ["Resume", analysis.readinessScore?.resume],
-            ["Skill match", analysis.readinessScore?.skillMatch],
-            ["Interview", analysis.readinessScore?.interview ?? "Pending"],
-          ].map(([label, value]) => (
+          {Object.entries({ resume: "Resume evidence", skillMatch: "JD keywords", interview: "Interview", assessment: "Assessment", learning: "Learning checks" }).map(([key, label]) => (
             <div className="rounded-xl bg-white/85 p-3" key={label}>
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                {label}
+                {label} · {scoreWeights[key]}%
               </p>
               <p className="mt-1 text-lg font-bold text-indigo-700">
-                {typeof value === "number" ? `${value}/100` : value}
+                {readiness[key] === null ? "Pending" : readiness[key] + "/100"}
               </p>
             </div>
           ))}
         </div>
       </div>
 
+      <p className="text-sm text-gray-600">Evidence covers {readiness.coverage}% of the weights. Pending components enter the average when you complete them.</p>
+      {analysis.checks && <section className="rounded-2xl border bg-white p-6">
+        <h3 className="font-bold">Resume evidence and keyword alignment</h3>
+        <p className="my-2 text-sm text-gray-600">The resume score checks five text signals. Each contributes 20 points. File layout and employer ATS rankings are outside this estimate.</p>
+        {analysis.checks.map(item => <p key={item.label}>{item.passed ? "✓" : "○"} {item.label}</p>)}
+        {Object.entries(analysis.evidence || {}).map(([skill,line]) => <blockquote className="mt-2 border-l-2 pl-3 text-sm" key={skill}><strong>{skill}</strong> · {line}</blockquote>)}
+        {!!analysis.skillsWithoutExamples?.length && <p className="mt-3 text-sm">Keywords to support with a project example · {analysis.skillsWithoutExamples.join(", ")}</p>}
+        {analysis.edits?.map(edit => <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm" key={edit.original}>
+          <p>Original · {edit.original}</p><p>Suggested wording · {edit.revised}</p>
+          <button className="mt-2 text-indigo-700 underline" onClick={() => onApply(edit)}>Use in resume draft</button>
+        </div>)}
+        <Link className="mt-4 inline-block text-indigo-700 underline" href="/dashboard/assessment?activity=resume">Practice rewriting a bullet</Link>
+      </section>}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border bg-white p-6 shadow-sm">
           <h3 className="flex items-center gap-2 text-lg font-bold text-gray-900">
@@ -104,7 +115,7 @@ function AnalysisResults({ analysis, source }) {
           <div className="mt-4 flex flex-wrap gap-2">
             {(analysis.skillGaps?.length
               ? analysis.skillGaps
-              : ["No major gap identified"]
+              : [readiness.skillMatch === null ? "Add a job description with recognized skills" : "All recognized keywords found"]
             ).map((skill) => (
               <span
                 key={skill}
@@ -130,6 +141,7 @@ function AnalysisResults({ analysis, source }) {
           <Brain className="h-5 w-5 text-violet-600" /> Your personalized
           roadmap
         </h3>
+        <Link href={"/dashboard/practice?skill=" + encodeURIComponent(analysis.skillGaps?.[0] || "")} className="mt-3 inline-block text-indigo-700 underline">Open learning resources</Link>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           {(analysis.roadmap || []).map((step, index) => (
             <div
@@ -158,10 +170,12 @@ export default function CareerProfilePage() {
   const [analysisSource, setAnalysisSource] = useState("local");
   const [isLoading, setIsLoading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [progress, setProgress] = useState(null);
   const [resumeFileName, setResumeFileName] = useState("");
 
   useEffect(() => {
     if (!user?.email) return;
+    loadProgress(supabase, user.email).then(setProgress).catch(() => toast.error("Could not load practice history."));
     supabase
       .from("CareerProfiles")
       .select(
@@ -231,6 +245,9 @@ export default function CareerProfilePage() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Analysis failed");
+      const activity = await loadProgress(supabase, user.email);
+      setProgress(activity);
+      payload.analysis.readinessScore = profileScore(payload.analysis, activity);
       const { error } = await supabase.from("CareerProfiles").upsert(
         {
           user_email: user.email,
@@ -290,7 +307,7 @@ export default function CareerProfilePage() {
           <label className="block text-sm font-semibold text-gray-800">
             Job description{" "}
             <span className="font-normal text-gray-500">(optional)</span>
-            <input
+            <textarea rows={3}
               value={jobDescription}
               onChange={(event) => setJobDescription(event.target.value)}
               placeholder="Paste requirements or a short role summary"
@@ -355,7 +372,11 @@ export default function CareerProfilePage() {
           {isLoading ? "Analyzing profile…" : "Generate VERITUS analysis"}
         </button>
       </form>
-      <AnalysisResults analysis={analysis} source={analysisSource} />
+      <AnalysisResults analysis={analysis} source={analysisSource} progress={progress} onApply={({ original, revised }) => {
+        if (!resumeText.includes(original)) return toast.info("This line has already changed. Analyze the updated draft.");
+        setResumeText(resumeText.replace(original, () => revised));
+        toast.success("Draft updated. Generate analysis to save the edit.");
+      }} />
     </main>
   );
 }

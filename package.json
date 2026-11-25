@@ -10,7 +10,7 @@
     "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .next",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/demo.test.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
@@ -22,10 +22,12 @@
     "@vapi-ai/web": "^2.3.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "geist": "^1.9.2",
     "lucide-react": "^0.517.0",
     "mammoth": "^1.10.0",
     "next": "15.3.8",
     "pdf-parse": "^1.1.1",
+    "quickjs-emscripten": "^0.32.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "sonner": "^2.0.6",
